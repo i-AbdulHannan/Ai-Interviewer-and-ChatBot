@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.chat-Div::-webkit-scrollbar {
+  display: none;
+}
+
+.sideBar {
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.sideBar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.sideBar::-webkit-scrollbar-track {
+  display: none;
+}
+
+.sideBar::-webkit-scrollbar-thumb {
+  background-color: #636262;
+  border-radius: 10px;
+  border: 2px solid #fff;
+}
