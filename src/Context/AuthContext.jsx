@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -17,6 +17,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../utilities/firebase";
 import { Bounce } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext();
 
@@ -25,6 +26,13 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [fetchedUser, FetchingUser] = useState(true);
   const [User, setUser] = useState(false);
+
+  const signupNameRef = useRef();
+  const signupEmailRef = useRef();
+  const signupPasswordRef = useRef();
+
+  const LoginEmailRef = useRef();
+  const LoginPasswordRef = useRef();
 
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
@@ -112,7 +120,7 @@ export const AuthProvider = ({ children }) => {
           });
         }
       );
-      navigate("/Login");
+      navigate("/login");
     } catch (error) {
       handleAuthError(error.code);
     } finally {
@@ -142,7 +150,7 @@ export const AuthProvider = ({ children }) => {
           UserId: user.uid,
         });
       }
-      navigate("/InterviewForm");
+      navigate("/interview-form");
     } catch (error) {
       setError(error.message);
     } finally {
@@ -160,11 +168,45 @@ export const AuthProvider = ({ children }) => {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/InterviewForm");
+      navigate("/interview-form");
     } catch (error) {
       handleAuthError(error.code);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSignupSubmit = async (navigate) => {
+    try {
+      const success = await signup(
+        signupEmailRef.current.value,
+        signupPasswordRef.current.value,
+        signupNameRef.current.value,
+        navigate
+      );
+      if (success) {
+        signupEmailRef.current.value = "";
+        signupPasswordRef.current.value = "";
+        signupNameRef.current.value = "";
+      }
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  const handleLoginSubmit = async (navigate) => {
+    try {
+      const success = await signIn(
+        LoginEmailRef.current.value,
+        LoginPasswordRef.current.value,
+        navigate
+      );
+      if (success) {
+        LoginEmailRef.current.value = "";
+        LoginPasswordRef.current.value = "";
+      }
+    } catch (error) {
+      setError(error.message);
     }
   };
 
@@ -180,6 +222,13 @@ export const AuthProvider = ({ children }) => {
         User,
         fetchedUser,
         toastObj,
+        signupNameRef,
+        signupEmailRef,
+        signupPasswordRef,
+        handleSignupSubmit,
+        LoginEmailRef,
+        LoginPasswordRef,
+        handleLoginSubmit,
       }}
     >
       {children}
