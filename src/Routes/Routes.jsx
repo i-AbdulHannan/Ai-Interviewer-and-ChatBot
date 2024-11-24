@@ -9,7 +9,7 @@ import InterviewForm from "../Pages/InterviewForm";
 import { InterviewFormProvider } from "../Context/InterviewFormContext";
 import { InterviewContextProvider } from "../Context/InterviewQuestionContext";
 import ProtectedRoute from "./ProtectedRoutes";
-import { ApiContextProvider } from "../Context/ApiContext";
+import { ChatBotContextProvider } from "../Context/ChatBotContext";
 import ChatBot from "../Pages/ChatBot";
 
 const router = createBrowserRouter([
@@ -56,9 +56,9 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <Layout />
-        <ApiContextProvider>
+        <ChatBotContextProvider>
           <ChatBot />
-        </ApiContextProvider>
+        </ChatBotContextProvider>
       </ProtectedRoute>
     ),
   },

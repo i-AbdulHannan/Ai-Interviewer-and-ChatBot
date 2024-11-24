@@ -1,9 +1,15 @@
 import { SendRounded, BorderColorOutlined } from "@mui/icons-material";
-import { UseApiContext } from "../Context/ApiContext";
+import { useChatBotContext } from "../Context/ChatBotContext";
 
 const ChatForm = () => {
-  const { handleSend, currentMsg, handleInput, startNewChat, sendIcon } =
-    UseApiContext();
+  const {
+    handleSend,
+    currentMsg,
+    handleInput,
+    startNewChat,
+    sendIcon,
+    isChat,
+  } = useChatBotContext();
   return (
     <div className="w-full lg:h-[80px] h-[70px] flex items-center justify-between flex-col gap-2 absolute bottom-0">
       <form
@@ -18,15 +24,17 @@ const ChatForm = () => {
             placeholder="Enter your Prompt here."
             onChange={handleInput}
           />
-          <BorderColorOutlined
-            onClick={startNewChat}
-            sx={{
-              fontSize: { xs: 30, lg: 40 },
-              cursor: "pointer",
-              transition: "transform 0.2s ease-in-out",
-              "&:hover": { transform: "scale(1.1)" },
-            }}
-          />
+          {isChat && (
+            <BorderColorOutlined
+              onClick={startNewChat}
+              sx={{
+                fontSize: { xs: 30, lg: 40 },
+                cursor: "pointer",
+                transition: "transform 0.2s ease-in-out",
+                "&:hover": { transform: "scale(1.1)" },
+              }}
+            />
+          )}
           <button type="submit">
             <SendRounded
               sx={{

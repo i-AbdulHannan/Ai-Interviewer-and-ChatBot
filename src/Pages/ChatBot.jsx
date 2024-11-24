@@ -1,11 +1,11 @@
 // import { SendRounded, BorderColorOutlined } from "@mui/icons-material";
-import { UseApiContext } from "../Context/ApiContext";
+import { useChatBotContext } from "../Context/ChatBotContext";
 import Sidebar from "../Components/Sidebar";
 import ChatList from "../Components/ChatList";
 import ChatForm from "../Components/ChatForm";
 
 const ChatBot = () => {
-  const { isChat, FetchingData } = UseApiContext();
+  const { isChat, userName, fetchUserName } = useChatBotContext();
 
   return (
     <>
@@ -17,7 +17,7 @@ const ChatBot = () => {
             {!isChat && (
               <div className="w-full h-full flex items-center justify-center flex-col gap-4">
                 <h2 className="md:text-4xl font-bold text-2xl text-center">
-                  Muhammad Furqan
+                  Hi 👏 {fetchUserName ? "User" : userName}
                 </h2>
                 <h4 className="md:text-3xl font-semibold text-xl text-center">
                   How can I help you today?

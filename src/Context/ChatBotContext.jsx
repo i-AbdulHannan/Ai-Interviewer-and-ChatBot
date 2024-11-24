@@ -1,5 +1,4 @@
-import { createContext, useContext, useState } from "react";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { createContext, useContext, useEffect, useState } from "react";
 import { db } from "../utilities/firebase";
 import {
   addDoc,
@@ -11,10 +10,12 @@ import {
   query,
   where,
   getDocs,
+  getDoc,
 } from "firebase/firestore";
 import { useAuth } from "./AuthContext";
+import { generationConfig, model } from "../utilities/Gemini";
 
-const ApiContext = createContext({
+const ChatBotContext = createContext({
   handleInput: () => {},
   sendIcon: false,
   handleSend: () => {},
@@ -23,19 +24,25 @@ const ApiContext = createContext({
   FetchingData: false,
   Chat: [],
   setChat: () => {},
-  startNewChat: () => {}, // Function to start a new chat
-  getDataToFirebase: () => {}, // Function to start a new chat
+  startNewChat: () => {},
+  getDataToFirebase: () => {},
 });
 
-export const ApiContextProvider = ({ children }) => {
+export const ChatBotContextProvider = ({ children }) => {
   const [sendIcon, setSendIcon] = useState(false);
   const [currentMsg, setCurrentMsg] = useState("");
   const [isChat, setIsChat] = useState(false);
   const [FetchingData, setFetchingData] = useState(false);
   const [Chat, setChat] = useState([]);
+  const [currentChatId, setCurrentChatId] = useState(null);
+  const [userName, setUserName] = useState("");
+  const [fetchUserName, fetchingUserName] = useState(true);
   const [history, setHistory] = useState([]);
-  const [currentChatId, setCurrentChatId] = useState(null); // Track current chat session ID
   const { User } = useAuth();
+
+  useEffect(() => {
+    getUserName();
+  }, []);
 
   const handleInput = (e) => {
     const val = e.target.value;
@@ -43,7 +50,6 @@ export const ApiContextProvider = ({ children }) => {
     setSendIcon(val.trim() !== "");
   };
 
-  // Start a new chat session
   const startNewChat = async () => {
     setChat([]);
     setIsChat(false);
@@ -59,29 +65,16 @@ export const ApiContextProvider = ({ children }) => {
 
       setChat((prevChat) => [
         ...prevChat,
-        { prompts: currentMsg, ApiResponse: null },
+        { Prompt: currentMsg, Response: "" },
       ]);
 
       await run(currentMsg);
     }
   };
 
-  const apiKey = "AIzaSyC8FZKDC7C2-p4v9H5_B0MQFswRWp_r0ig";
-  const genAI = new GoogleGenerativeAI(apiKey);
-
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-  const generationConfig = {
-    temperature: 1,
-    topP: 0.95,
-    topK: 40,
-    maxOutputTokens: 8192,
-    responseMimeType: "text/plain",
-  };
-
   const saveUserChat = async ({ Prompt, Response }) => {
     try {
       if (!currentChatId) {
-        // Create a new chat document if no chat session is active
         const chatDocRef = await addDoc(collection(db, "Chats"), {
           userId: User.uid,
           messages: arrayUnion({
@@ -90,9 +83,8 @@ export const ApiContextProvider = ({ children }) => {
           }),
           timestamp: Timestamp.now(),
         });
-        setCurrentChatId(chatDocRef.id); // Save the new chat session ID
+        setCurrentChatId(chatDocRef.id);
       } else if (currentChatId) {
-        // Update the messages array of the current chat session document
         const chatDocRef = doc(db, "Chats", currentChatId);
         await updateDoc(chatDocRef, {
           messages: arrayUnion({
@@ -106,55 +98,83 @@ export const ApiContextProvider = ({ children }) => {
     }
   };
 
+  const getUserName = async () => {
+    const docRef = doc(db, "users", User.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      fetchingUserName(false);
+      setUserName(docSnap.data().name);
+    }
+  };
+
+  const fetchChatSessions = async () => {
+    const q = query(collection(db, "Chats"), where("userId", "==", User.uid));
+    const querySnapshot = await getDocs(q);
+    const sessions = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    setHistory(sessions);
+  };
+
+  const fetchChatSession = async (sessionId) => {
+    const chatDocRef = doc(db, "Chats", sessionId);
+    const chatDoc = await getDoc(chatDocRef);
+    if (chatDoc.exists()) {
+      setChat(chatDoc.data().messages);
+    }
+  };
+
+  const typeResponse = (fullText) => {
+    let index = 0;
+
+    const typingInterval = setInterval(() => {
+      setChat((prevChat) => {
+        const updatedChat = [...prevChat];
+        const lastMessage = updatedChat[updatedChat.length - 1];
+
+        if (index < fullText.length) {
+          lastMessage.Response += fullText[index];
+          index += 1;
+        } else {
+          clearInterval(typingInterval); // Stop typing when done
+        }
+
+        return updatedChat;
+      });
+    }, 25);
+  };
+
   const run = async (UserInput) => {
     setFetchingData(true);
 
     const chatSession = model.startChat({
       generationConfig,
-      history: [
-        {
-          role: "user",
-          parts: [{ text: "" }],
-        },
-      ],
+      history: [],
     });
 
     try {
       const result = await chatSession.sendMessage(UserInput);
       const responseText = result.response.text();
 
-      // Save the prompt and response to Firestore
       await saveUserChat({
         Prompt: UserInput,
         Response: responseText,
       });
 
       setFetchingData(false);
-      setChat((prevChat) => {
-        const updatedChat = [...prevChat];
-        updatedChat[updatedChat.length - 1].ApiResponse = responseText;
-        return updatedChat;
-      });
+      typeResponse(responseText);
     } catch (error) {
       console.error("Error while running the API or saving data:", error);
       setFetchingData(false);
     }
   };
 
-  const getDataToFirebase = async () => {
-    console.log("run");
-    const q = query(collection(db, "Chats"), where("userId", "==", User.uid));
-    const querySnapshot = await getDocs(q);
-    querySnapshot.forEach((doc) => {
-      const chatSession = doc.data().messages;
-      setHistory([...history, chatSession]);
-      console.log(chatSession);
-    });
-  };
-
   return (
-    <ApiContext.Provider
+    <ChatBotContext.Provider
       value={{
+        history,
         handleInput,
         sendIcon,
         handleSend,
@@ -164,16 +184,19 @@ export const ApiContextProvider = ({ children }) => {
         FetchingData,
         Chat,
         setChat,
-        startNewChat, // Expose the startNewChat function
-        getDataToFirebase,
-        history,
+        startNewChat,
+        userName,
+        fetchUserName,
+        fetchChatSessions,
+        fetchChatSession,
+        setIsChat,
       }}
     >
       {children}
-    </ApiContext.Provider>
+    </ChatBotContext.Provider>
   );
 };
 
-export const UseApiContext = () => {
-  return useContext(ApiContext);
+export const useChatBotContext = () => {
+  return useContext(ChatBotContext);
 };
