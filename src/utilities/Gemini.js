@@ -12,4 +12,16 @@ const generationConfig = {
   responseMimeType: "text/plain",
 };
 
-export { model, generationConfig };
+const GeminiApiCall = async (prompt, history = []) => {
+  const chatSession = model.startChat({
+    generationConfig,
+    history: history,
+  });
+
+  console.log(history);
+  const result = await chatSession.sendMessage(prompt);
+  const responseText = result.response.text();
+  return responseText;
+};
+
+export { GeminiApiCall };

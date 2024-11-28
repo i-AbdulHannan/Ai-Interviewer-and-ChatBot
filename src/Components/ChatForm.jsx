@@ -1,4 +1,8 @@
-import { SendRounded, BorderColorOutlined } from "@mui/icons-material";
+import {
+  SendRounded,
+  BorderColorOutlined,
+  StopCircleRounded,
+} from "@mui/icons-material";
 import { useChatBotContext } from "../Context/ChatBotContext";
 
 const ChatForm = () => {
@@ -9,9 +13,12 @@ const ChatForm = () => {
     startNewChat,
     sendIcon,
     isChat,
+    handleStop,
+    showPauseIcon,
   } = useChatBotContext();
+
   return (
-    <div className="w-full lg:h-[80px] h-[70px] flex items-center justify-between flex-col gap-2 absolute bottom-0">
+    <div className="w-full h-[90px] flex items-center justify-between flex-col gap-2 absolute bottom-0 px-2">
       <form
         onSubmit={handleSend}
         className="w-full h-full flex items-center justify-center"
@@ -20,10 +27,21 @@ const ChatForm = () => {
           <input
             value={currentMsg}
             type="text"
-            className="w-full rounded-3xl lg:text-lg lg:h-[49px] h-[42px] lg:font-semibold text-white placeholder-gray-200 outline-none px-5 bg-[#040E1A] shadow-md shadow-gray-600 border-[1px] border-gray-100"
+            className="w-full rounded-3xl lg:text-lg lg:h-[54px] h-[48px] lg:font-semibold text-white placeholder-gray-200 outline-none px-5 bg-[#040E1A] shadow-md shadow-gray-600 border-[1px] border-gray-100"
             placeholder="Enter your Prompt here."
             onChange={handleInput}
           />
+          {showPauseIcon && (
+            <StopCircleRounded
+              onClick={handleStop}
+              sx={{
+                fontSize: { xs: 30, lg: 40 },
+                cursor: "pointer",
+                transition: "transform 0.2s ease-in-out",
+                "&:hover": { transform: "scale(1.1)" },
+              }}
+            />
+          )}
           {isChat && (
             <BorderColorOutlined
               onClick={startNewChat}

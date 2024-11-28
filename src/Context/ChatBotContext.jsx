@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { db } from "../utilities/firebase";
 import {
   addDoc,
@@ -11,9 +11,10 @@ import {
   where,
   getDocs,
   getDoc,
+  orderBy,
 } from "firebase/firestore";
 import { useAuth } from "./AuthContext";
-import { generationConfig, model } from "../utilities/Gemini";
+import { GeminiApiCall } from "../utilities/Gemini";
 
 const ChatBotContext = createContext({
   handleInput: () => {},
@@ -37,12 +38,27 @@ export const ChatBotContextProvider = ({ children }) => {
   const [currentChatId, setCurrentChatId] = useState(null);
   const [userName, setUserName] = useState("");
   const [fetchUserName, fetchingUserName] = useState(true);
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState("");
+  const [fetchedHistory, fetchHistory] = useState(true);
+  const [showPauseIcon, setShowPauseIcon] = useState(false);
+  const [stopResponse, setStopResponse] = useState(false);
   const { User } = useAuth();
+
+  const stopResponseRef = useRef(stopResponse); // useRef to track stopResponse state
+
+  useEffect(() => {
+    stopResponseRef.current = stopResponse; // Sync stopResponseRef with stopResponse state
+  }, [stopResponse]);
 
   useEffect(() => {
     getUserName();
   }, []);
+
+  const handleStop = () => {
+    setFetchingData(false);
+    setStopResponse(true);
+    setShowPauseIcon(false);
+  };
 
   const handleInput = (e) => {
     const val = e.target.value;
@@ -51,6 +67,7 @@ export const ChatBotContextProvider = ({ children }) => {
   };
 
   const startNewChat = async () => {
+    fetchChatSessions();
     setChat([]);
     setIsChat(false);
     setCurrentChatId(null);
@@ -59,6 +76,8 @@ export const ChatBotContextProvider = ({ children }) => {
   const handleSend = async (e) => {
     e.preventDefault();
     if (currentMsg.trim() !== "") {
+      setStopResponse(false);
+      setShowPauseIcon(true);
       setCurrentMsg("");
       setSendIcon(false);
       setIsChat(true);
@@ -91,6 +110,7 @@ export const ChatBotContextProvider = ({ children }) => {
             Prompt,
             Response,
           }),
+          timestamp: Timestamp.now(),
         });
       }
     } catch (error) {
@@ -109,13 +129,24 @@ export const ChatBotContextProvider = ({ children }) => {
   };
 
   const fetchChatSessions = async () => {
-    const q = query(collection(db, "Chats"), where("userId", "==", User.uid));
-    const querySnapshot = await getDocs(q);
-    const sessions = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    setHistory(sessions);
+    fetchHistory(true); // Loading state ko true set karen
+    try {
+      const q = query(
+        collection(db, "Chats"),
+        where("userId", "==", User.uid),
+        orderBy("timestamp", "desc") // Timestamp ko descending order me sort karna
+      );
+      const querySnapshot = await getDocs(q);
+      const sessions = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setHistory(sessions); // Sorted sessions ko set karein
+    } catch (error) {
+      console.error("Error fetching chat sessions:", error); // Error handling
+    } finally {
+      fetchHistory(false); // Loading ko false set karein after fetching
+    }
   };
 
   const fetchChatSession = async (sessionId) => {
@@ -123,50 +154,58 @@ export const ChatBotContextProvider = ({ children }) => {
     const chatDoc = await getDoc(chatDocRef);
     if (chatDoc.exists()) {
       setChat(chatDoc.data().messages);
+      setCurrentChatId(chatDoc.id);
     }
   };
 
   const typeResponse = (fullText) => {
     let index = 0;
-
     const typingInterval = setInterval(() => {
+      // Check stopResponseRef.current inside the interval
+      if (stopResponseRef.current) {
+        clearInterval(typingInterval); // If stopResponse is true, stop typing
+        return;
+      }
+
       setChat((prevChat) => {
         const updatedChat = [...prevChat];
         const lastMessage = updatedChat[updatedChat.length - 1];
-
-        if (index < fullText.length) {
+        if (index < fullText?.length) {
           lastMessage.Response += fullText[index];
           index += 1;
         } else {
-          clearInterval(typingInterval); // Stop typing when done
+          clearInterval(typingInterval);
+          setShowPauseIcon(false);
         }
-
         return updatedChat;
       });
     }, 25);
   };
 
+  const findChats = () => {
+    return Chat.map((obj) => ({ text: obj.Prompt }));
+  };
+
   const run = async (UserInput) => {
     setFetchingData(true);
-
-    const chatSession = model.startChat({
-      generationConfig,
-      history: [],
-    });
-
+    let responseText;
     try {
-      const result = await chatSession.sendMessage(UserInput);
-      const responseText = result.response.text();
-
+      const ChatHistory = findChats();
+      if (ChatHistory.length < 1) {
+        responseText = await GeminiApiCall(UserInput);
+      } else if (ChatHistory.length >= 1) {
+        responseText = await GeminiApiCall(UserInput, [
+          { role: "user", parts: ChatHistory },
+        ]);
+      }
       await saveUserChat({
         Prompt: UserInput,
         Response: responseText,
       });
-
       setFetchingData(false);
       typeResponse(responseText);
     } catch (error) {
-      console.error("Error while running the API or saving data:", error);
+      console.log("Error while running the API or saving data:", error);
       setFetchingData(false);
     }
   };
@@ -174,6 +213,7 @@ export const ChatBotContextProvider = ({ children }) => {
   return (
     <ChatBotContext.Provider
       value={{
+        handleStop,
         history,
         handleInput,
         sendIcon,
@@ -190,6 +230,8 @@ export const ChatBotContextProvider = ({ children }) => {
         fetchChatSessions,
         fetchChatSession,
         setIsChat,
+        fetchedHistory,
+        showPauseIcon,
       }}
     >
       {children}

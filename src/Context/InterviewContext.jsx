@@ -1,9 +1,12 @@
 import { createContext, useContext, useState } from "react";
 import { useForm } from "react-hook-form";
+import { GeminiApiCall } from "../utilities/Gemini";
+import { useNavigate } from "react-router-dom";
 
-const interviewFormContext = createContext();
+const interviewContext = createContext();
 
-const InterviewFormProvider = ({ children }) => {
+const InterviewContextProvider = ({ children }) => {
+  const navigate = useNavigate();
   const industriesAndJobs = [
     {
       industry: " Software Development",
@@ -144,9 +147,29 @@ const InterviewFormProvider = ({ children }) => {
 
   const { register, handleSubmit } = useForm();
   const [jobTitles, setJobTitles] = useState([]);
+  const [GenerateQuestions, setGenerateQuestions] = useState(false);
+  const [userDetails, setUserDetaisl] = useState("");
 
-  const onSubmit = (formData) => {
-    console.log(formData);
+  const onSubmit = async (formData) => {
+    const { selectedIndustry, Description, Experience, JobTitle, Skills } =
+      formData;
+    const prompt = `Generate a JSON array of realistic, professional 3 interview questions based on the following job details. Focus on questions that assess the candidate’s skills, experience, and fit for the role in a real-world interview setting. Make questions natural and relevant. Job Details:Industry: ${selectedIndustry},  Job Title: ${JobTitle} , Job Description: ${Description} , Required Skills: ${Skills} , Experience Level: ${Experience} Output only the questions as a JSON array, with no additional text or symbols.`;
+    setGenerateQuestions(true);
+    setUserDetaisl(
+      `I am a ${JobTitle} , my sills is ${Skills} and my experience is  ${Experience} `
+    );
+    try {
+      const result = await GeminiApiCall(prompt);
+      const cleanResponse = result
+        .replace(/```json/, "")
+        .replace(/```/, "")
+        .trim();
+      const parse = JSON.parse(cleanResponse);
+      setGenerateQuestions(false);
+      navigate("/interview", { state: parse });
+    } catch (error) {
+      console.error("Error while running the API or saving data:", error);
+    }
   };
   const handleIndustryChange = (e) => {
     const selectedIndustry = e.target.value;
@@ -161,7 +184,7 @@ const InterviewFormProvider = ({ children }) => {
   };
 
   return (
-    <interviewFormContext.Provider
+    <interviewContext.Provider
       value={{
         industriesAndJobs,
         handleIndustryChange,
@@ -169,15 +192,18 @@ const InterviewFormProvider = ({ children }) => {
         onSubmit,
         register,
         handleSubmit,
+        FormData,
+        GenerateQuestions,
+        userDetails,
       }}
     >
       {children}
-    </interviewFormContext.Provider>
+    </interviewContext.Provider>
   );
 };
 
-const formContext = () => {
-  return useContext(interviewFormContext);
+const useInterviewContext = () => {
+  return useContext(interviewContext);
 };
 
-export { InterviewFormProvider, formContext };
+export { InterviewContextProvider, useInterviewContext };

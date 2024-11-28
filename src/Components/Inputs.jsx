@@ -16,7 +16,7 @@ const Inputs = ({ fields }) => {
               type={input.type}
               placeholder={input.placeholder}
               autoComplete={input.autocomplete}
-              className="sm:w-[85%] w-[95%] bg-[#05070A] border-[1px] border-solid border-blue-700 rounded-lg px-4 py-2 outline-none"
+              className="sm:w-[85%] w-[92%] bg-[#05070A] border-[1px] border-solid border-blue-700 rounded-lg px-4 py-2 outline-none"
             />
           </div>
         );

@@ -30,9 +30,9 @@
 }
 
 .sideBar::-webkit-scrollbar-thumb {
-  background-color: #636262;
-  border-radius: 10px;
-  border: 2px solid #fff;
+  background-color: #103a6c;
+  border-radius: 20px;
+  border: 2px solid #cbd5e1;
 }
 
 /* Body styling */

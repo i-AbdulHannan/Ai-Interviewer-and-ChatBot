@@ -4,13 +4,12 @@ import Layout from "../Layout/Layout";
 import Hero from "../Pages/Hero";
 import Signup from "../Pages/Signup";
 import Login from "../Pages/Login";
-import InterviewQuestions from "../Pages/InterviewQuestions";
 import InterviewForm from "../Pages/InterviewForm";
-import { InterviewFormProvider } from "../Context/InterviewFormContext";
-import { InterviewContextProvider } from "../Context/InterviewQuestionContext";
+import { InterviewContextProvider } from "../Context/InterviewContext";
 import ProtectedRoute from "./ProtectedRoutes";
 import { ChatBotContextProvider } from "../Context/ChatBotContext";
 import ChatBot from "../Pages/ChatBot";
+import InterviewQuestions from "../Pages/InterviewQuestions";
 
 const router = createBrowserRouter([
   {
@@ -31,12 +30,23 @@ const router = createBrowserRouter([
     element: <Login />,
   },
   {
+    path: "/app",
+    element: (
+      <ProtectedRoute>
+        <ChatBotContextProvider>
+          <Layout />
+          <ChatBot />
+        </ChatBotContextProvider>
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: "/interview-form",
     element: (
       <ProtectedRoute>
-        <InterviewFormProvider>
+        <InterviewContextProvider>
           <InterviewForm />
-        </InterviewFormProvider>
+        </InterviewContextProvider>
       </ProtectedRoute>
     ),
   },
@@ -48,17 +58,6 @@ const router = createBrowserRouter([
         <InterviewContextProvider>
           <InterviewQuestions />
         </InterviewContextProvider>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/app",
-    element: (
-      <ProtectedRoute>
-        <Layout />
-        <ChatBotContextProvider>
-          <ChatBot />
-        </ChatBotContextProvider>
       </ProtectedRoute>
     ),
   },

@@ -1,4 +1,4 @@
-import { formContext } from "../Context/InterviewFormContext";
+import { useInterviewContext } from "../Context/InterviewContext";
 
 const InterviewForm = () => {
   const {
@@ -8,11 +8,12 @@ const InterviewForm = () => {
     handleSubmit,
     onSubmit,
     register,
-  } = formContext();
+    GenerateQuestions,
+  } = useInterviewContext();
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center">
-      <div className="w-full max-w-[900px] lg:w-[50%]  my-7 bg-[#040E1A] rounded-lg shadow-lg shadow-blue-300 flex items-center jus py-6">
+    <div className="min-h-[100svh] w-full flex items-center justify-center px-2">
+      <div className="w-full max-w-[900px] lg:w-[50%]  my-7 bg-[#040E1A] rounded-xl shadow-lg shadow-blue-300 flex items-center py-6">
         <form
           className="flex flex-col h-full w-full gap-7 px-1"
           onSubmit={handleSubmit(onSubmit)}
@@ -34,7 +35,7 @@ const InterviewForm = () => {
                 {...register("selectIndustry")}
                 onChange={handleIndustryChange}
               >
-                <option className="text-base font-semibold ">
+                <option className="text-base font-semibold " value="">
                   Choose Industry...
                 </option>
 
@@ -62,9 +63,9 @@ const InterviewForm = () => {
               <select
                 id="Job Title"
                 className="bg-slate-300 outline-none text-base font-semibold py-3 rounded-lg px-3"
-                {...register("Job Title")}
+                {...register("JobTitle")}
               >
-                <option className="text-base font-semibold ">
+                <option className="text-base font-semibold " value="">
                   Choose Job Title...
                 </option>
                 {jobTitles.map((job, index) => (
@@ -109,7 +110,7 @@ const InterviewForm = () => {
                 className="bg-slate-300 outline-none text-base font-semibold py-3 rounded-lg px-3"
                 {...register("Language")}
               >
-                <option className="text-base font-semibold ">
+                <option className="text-base font-semibold " value="">
                   Choose Language...
                 </option>
                 <option className="text-base font-semibold " value={"English"}>
@@ -132,7 +133,7 @@ const InterviewForm = () => {
                 className="bg-slate-300 outline-none text-base font-semibold py-3 rounded-lg px-3"
                 {...register("Type")}
               >
-                <option className="text-base font-semibold ">
+                <option className="text-base font-semibold " value="">
                   Choose Interview Type...
                 </option>
                 <option className="text-base font-semibold " value={"Chat"}>
@@ -170,7 +171,7 @@ const InterviewForm = () => {
                 id="Experience"
                 className="bg-slate-300 outline-none text-base font-semibold py-3 rounded-lg px-3"
               >
-                <option className="text-base font-semibold ">
+                <option className="text-base font-semibold " value="">
                   Choose Experience...
                 </option>
                 <option className="text-base font-semibold " value={"Student"}>
@@ -202,10 +203,11 @@ const InterviewForm = () => {
 
           <div className="mt-3 w-full lg:px-10 flex items-center justify-center px-3">
             <button
+              disabled={GenerateQuestions}
               type="submit"
               className="bg-cyan-600 text-xl w-full font-bold lg:px-6 rounded-xl py-2  text-black hover:bg-cyan-700 hover:text-white transition-all"
             >
-              Submit
+              {GenerateQuestions ? "Generate Interview Questions..." : "Submit"}
             </button>
           </div>
         </form>

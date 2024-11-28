@@ -42,8 +42,8 @@ const Login = () => {
   ];
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center">
-      <div className="flex flex-col bg-[#040E1A] w-full sm:w-[400px] items-center gap-6 py-6 rounded-lg shadow-lg shadow-blue-300">
+    <div className="w-full min-h-[100svh] flex items-center justify-center">
+      <div className="flex flex-col bg-[#040E1A] w-[94%] sm:w-[400px] items-center gap-6 py-6 rounded-xl shadow-lg shadow-blue-300">
         <h1 className="text-4xl font-bold">Sign in</h1>
         <Inputs fields={loginFields} />
         <AuthButton text={"Sign in"} handleSubmit={handleLoginSubmit} />

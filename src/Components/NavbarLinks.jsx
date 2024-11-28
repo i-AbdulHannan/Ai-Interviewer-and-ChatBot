@@ -11,7 +11,7 @@ const NavbarLinks = ({ state }) => {
       {/*  Mobile view */}
       <ul
         className={`${state ? "translate-x-0" : "-translate-x-full"}
-        inset-0 fixed flex  bg-black text-white items-center justify-center flex-col gap-10 text-xl font-bold transition-all duration-300 ease-in-out md:right-[65%] lg:hidden`}
+        inset-0 fixed flex  bg-black text-white items-center justify-center flex-col gap-10 text-xl font-bold transition-all duration-300 ease-in-out md:right-[55%] lg:hidden`}
       >
         {pages.map((page, index) => {
           return (

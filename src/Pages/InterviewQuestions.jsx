@@ -1,58 +1,119 @@
-import { useEffect } from "react";
-import { useInterviewContext } from "../Context/InterviewQuestionContext";
+import { useState } from "react";
+import Button from "../Components/Button";
+import { useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { GeminiApiCall } from "../utilities/Gemini";
+import { toast } from "react-toastify";
 import { useAuth } from "../Context/AuthContext";
+import Result from "../Components/Result";
 
 const InterviewQuestions = () => {
-  const { getUserName, userName } = useInterviewContext();
-  const { User, fetchedUser } = useAuth();
-  useEffect(() => {
-    if (!fetchedUser) {
-      getUserName(User.uid);
+  const location = useLocation();
+  const [currentAnswer, setCurrentAnswer] = useState("");
+  const [Answers, setAnswers] = useState([]);
+  const [index, setIndex] = useState(0);
+  const [response, setResponse] = useState(null);
+  const [interviewComplete, setInterviewComplete] = useState(false);
+  const [generateResult, setGenerateResult] = useState(false);
+  const { toastObj } = useAuth();
+  // const Questions = location.state;
+  const Questions = [
+    "Please rate the  following answers out of 5, calculate the percentage, and provide a short message like about result. The questions have been provided in the previous history; please check them. giv",
+  ];
+
+  const handleChange = (e) => {
+    setCurrentAnswer(e.target.value);
+  };
+
+  const handleNextQuestion = async () => {
+    if (index < Questions.length - 1) {
+      if (currentAnswer.trim() === "") {
+        toast.warning("Please write answer in text Area:", toastObj);
+        return;
+      }
+      setAnswers((prev) => [...prev, currentAnswer]);
+      setIndex(index + 1);
+      setCurrentAnswer("");
+    } else if (index === Questions.length - 1) {
+      if (currentAnswer.trim() === "") {
+        toast.warning("Please write answer in text Area:", toastObj);
+        return;
+      }
+      setAnswers((prev) => [...prev, currentAnswer]);
+      const AllQuestions = Questions.map((item) => ({ text: item }));
+      const allAnswers = [...Answers, currentAnswer];
+      const AnswersStructure = allAnswers.map(
+        (item, index) => `${index + 1}:Answer ${item}`
+      );
+
+      const prompt = `Please rate the  following answers out of 5, calculate the percentage, and provide a short message like about result. The questions have been provided in the previous history; please check them. give me only percentage no extra text. ${AnswersStructure.join(
+        "\n"
+      )}`;
+      setInterviewComplete(true);
+      setGenerateResult(true);
+      const response = await GeminiApiCall(prompt, [
+        {
+          role: "user",
+          parts: AllQuestions,
+        },
+      ]);
+      setResponse(response);
+      generateResult(false);
     }
-  }, []);
+  };
+
   return (
-    <div className="h-[calc(100svh-82px)]  w-full flex items-center justify-center">
-      <div className="max-w-[1200px] w-[80%] rounded-xl bg-[#040E1A] min-h-[80%] shadow-lg shadow-blue-300 px-5 py-4">
-        <div className="w-full flex items-center flex-col gap-10">
-          <div className="w-full flex gap-3">
-            <p className="text-xl font-medium">Q1:</p>
-            <p className="text-xl font-medium">
-              Lorem ipsum dolor sit amet, consectetur adipisicing elit. Voluptas
-              doloribus consequatur cumque vero suscipit autem. Animi beatae
-              accusantium a sed.
+    <div className="min-h-[calc(100svh-80px)] py-6  w-full flex items-center justify-center">
+      <div className="max-w-[1200px] lg:w-[80%] w-[97%] rounded-xl bg-[#040E1A] min-h-[80%] shadow-md shadow-blue-300 md:px-5 px-3 py-4">
+        {Array.isArray(Questions) && Questions.length > 0 ? (
+          <div className="w-full flex items-center flex-col gap-10">
+            <div className="w-full flex flex-col md:flex-row md:gap-3 gap-1">
+              <p className="text-xl font-medium">{`Q${index + 1}:`}</p>
+              <p className="md:text-xl text-lg font-medium">
+                {Questions[index]}
+              </p>
+            </div>
+            <div className="w-full flex  flex-col md:gap-3 gap-1">
+              <label
+                className="text-xl text-center md:text-left font-semibold"
+                htmlFor="answer"
+              >
+                Enter Your Answer:
+              </label>
+              <textarea
+                value={currentAnswer}
+                onChange={handleChange}
+                id="answer"
+                rows="7"
+                placeholder="Write Answer..."
+                className="bg-[#CBD5E1] w-full outline-none md:text-xl text-lg font-semibold text-black px-3 py-1 rounded-lg placeholder-black"
+              ></textarea>
+            </div>
+            <div className="w-full flex justify-end">
+              <Button
+                Click={handleNextQuestion}
+                text={
+                  Questions.length - 1 === index
+                    ? "Submit"
+                    : generateResult
+                    ? "Generate Result..."
+                    : "Next Question"
+                }
+              />
+            </div>
+          </div>
+        ) : (
+          <div className=" w-full h-full flex items-center justify-center lg:px-20 flex-col gap-7">
+            <p className="lg:text-3xl text-xl font-semibold text-center">
+              Interview questions currently unavailable. Please fill the form to
+              proceed with the interview.
             </p>
+            <Button>
+              <Link to="/interview-form">Interview Form</Link>
+            </Button>
           </div>
-          <div className="w-full flex flex-col gap-3">
-            <label className="text-xl font-semibold" htmlFor="answer">
-              Enter Your Answer:
-            </label>
-            <textarea
-              id="answer"
-              rows="7"
-              placeholder="Write Answer..."
-              className="bg-[#CBD5E1] w-full outline-none text-xl font-semibold text-black px-3 py-1 rounded-lg placeholder-black"
-            ></textarea>
-          </div>
-          <div className="w-full flex justify-end">
-            <button className="px-3 py-2 bg-blue-950 border-[3px] rounded-lg border-blue-400 font-semibold text-base">
-              Next Question
-            </button>
-          </div>
-        </div>
-      </div>
-      <div className="w-full h-full flex flex-col">
-        <div className=" h-[70%] flex items-center justify-center">
-          <img
-            src="/Ai-removebg.png"
-            alt="Robot"
-            className="w-auto h-[350px] object-cover"
-          />
-        </div>
-        <div className="h-[30%] flex items-center justify-center">
-          <button>Next Question</button>
-          <button>Repeat Question</button>
-          <button></button>
-        </div>
+        )}
+        {interviewComplete && <Result result={response} />}
       </div>
     </div>
   );
