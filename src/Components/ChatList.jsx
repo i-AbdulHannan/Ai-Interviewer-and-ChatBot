@@ -6,7 +6,6 @@ const ChatList = ({ userName }) => {
   const { Chat, FetchingData } = useChatBotContext();
   const chatRef = useRef(null);
   useEffect(() => {
-    // Latest message par scroll karwana
     chatRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [Chat]);
   return (

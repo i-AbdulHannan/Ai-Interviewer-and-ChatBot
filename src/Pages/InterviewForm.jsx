@@ -1,3 +1,4 @@
+import TagInput from "../Components/TagInput";
 import { useInterviewContext } from "../Context/InterviewContext";
 
 const InterviewForm = () => {
@@ -14,10 +15,7 @@ const InterviewForm = () => {
   return (
     <div className="min-h-[100svh] w-full flex items-center justify-center px-2">
       <div className="w-full max-w-[900px] lg:w-[50%]  my-7 bg-[#040E1A] rounded-xl shadow-lg shadow-blue-300 flex items-center py-6">
-        <form
-          className="flex flex-col h-full w-full gap-7 px-1"
-          onSubmit={handleSubmit(onSubmit)}
-        >
+        <div className="flex flex-col h-full w-full gap-7 px-1">
           <h1 className="text-center text-3xl font-bold">
             Tell Us About Your Job Focus
           </h1>
@@ -100,67 +98,6 @@ const InterviewForm = () => {
           <div className="w-full grid lg:grid-cols-2 gap-6 lg:px-10 px-3">
             <div className="flex flex-col gap-1 text-black">
               <label
-                htmlFor="Language"
-                className="text-lg font-semibold text-gray-100"
-              >
-                Select Language:
-              </label>
-              <select
-                id="Language"
-                className="bg-slate-300 outline-none text-base font-semibold py-3 rounded-lg px-3"
-                {...register("Language")}
-              >
-                <option className="text-base font-semibold " value="">
-                  Choose Language...
-                </option>
-                <option className="text-base font-semibold " value={"English"}>
-                  English
-                </option>
-                <option className="text-base font-semibold " value={"Urdu"}>
-                  Urdu
-                </option>
-              </select>
-            </div>
-            <div className="flex flex-col gap-1 text-black">
-              <label
-                htmlFor="type"
-                className="text-lg font-semibold text-gray-100"
-              >
-                Select Interview Type:
-              </label>
-              <select
-                id="type"
-                className="bg-slate-300 outline-none text-base font-semibold py-3 rounded-lg px-3"
-                {...register("Type")}
-              >
-                <option className="text-base font-semibold " value="">
-                  Choose Interview Type...
-                </option>
-                <option className="text-base font-semibold " value={"Chat"}>
-                  Chat
-                </option>
-                <option className="text-base font-semibold " value={"Voice"}>
-                  Voice
-                </option>
-              </select>
-            </div>
-            <div className="flex flex-col gap-1 text-black">
-              <label
-                htmlFor="Skills"
-                className="text-lg font-semibold text-gray-100"
-              >
-                Required Skills:
-              </label>
-              <input
-                {...register("Skills")}
-                id="Skills"
-                className="bg-slate-300 outline-none text-base font-semibold placeholder-black px-3 py-3 rounded-lg "
-                type="text"
-                placeholder="Enter Skills..."
-              />
-            </div>
-            <div className="flex flex-col gap-1 text-black">
-              <label
                 htmlFor="Experience"
                 className="text-lg font-semibold text-gray-100"
               >
@@ -191,6 +128,34 @@ const InterviewForm = () => {
                 </option>
               </select>
             </div>
+            <div className="flex flex-col gap-1 text-black">
+              <label
+                htmlFor="type"
+                className="text-lg font-semibold text-gray-100"
+              >
+                Select Interview Type:
+              </label>
+              <select
+                id="type"
+                className="bg-slate-300 outline-none text-base font-semibold py-3 rounded-lg px-3"
+                {...register("Type")}
+              >
+                <option className="text-base font-semibold " value="">
+                  Choose Interview Type...
+                </option>
+                <option className="text-base font-semibold " value={"Chat"}>
+                  Chat
+                </option>
+                <option className="text-base font-semibold " value={"Voice"}>
+                  Voice
+                </option>
+              </select>
+            </div>
+          </div>
+          <div className="w-full grid grid-cols-1 gap-6 lg:px-10 px-3">
+            <div className="flex  w-full flex-col gap-1 text-black">
+              <TagInput></TagInput>
+            </div>
           </div>
 
           <div className="w-full lg:px-10 flex flex-col lg:flex-row gap-1 items-center justify-center px-3">
@@ -204,13 +169,14 @@ const InterviewForm = () => {
           <div className="mt-3 w-full lg:px-10 flex items-center justify-center px-3">
             <button
               disabled={GenerateQuestions}
+              onClick={handleSubmit(onSubmit)}
               type="submit"
               className="bg-cyan-600 text-xl w-full font-bold lg:px-6 rounded-xl py-2  text-black hover:bg-cyan-700 hover:text-white transition-all"
             >
               {GenerateQuestions ? "Generate Interview Questions..." : "Submit"}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

@@ -27,6 +27,18 @@ const ChatBotContext = createContext({
   setChat: () => {},
   startNewChat: () => {},
   getDataToFirebase: () => {},
+  handleStop: () => {},
+  history: "",
+  run: () => {},
+  userName: "",
+  fetchUserName: true,
+  fetchChatSessions: () => {},
+  fetchChatSession: () => {},
+  setIsChat: () => {},
+  fetchedHistory: true,
+  showPauseIcon: false,
+  setSelectedResult: () => {},
+  selectedResult: null,
 });
 
 export const ChatBotContextProvider = ({ children }) => {
@@ -42,12 +54,13 @@ export const ChatBotContextProvider = ({ children }) => {
   const [fetchedHistory, fetchHistory] = useState(true);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
   const [stopResponse, setStopResponse] = useState(false);
-  const { User } = useAuth();
+  const [selectedResult, setSelectedResult] = useState(null);
+  const { User, setError } = useAuth();
 
-  const stopResponseRef = useRef(stopResponse); // useRef to track stopResponse state
+  const stopResponseRef = useRef(stopResponse);
 
   useEffect(() => {
-    stopResponseRef.current = stopResponse; // Sync stopResponseRef with stopResponse state
+    stopResponseRef.current = stopResponse;
   }, [stopResponse]);
 
   useEffect(() => {
@@ -114,7 +127,7 @@ export const ChatBotContextProvider = ({ children }) => {
         });
       }
     } catch (error) {
-      console.error("Error saving chat data to Firestore:", error);
+      setError("Error save Document");
     }
   };
 
@@ -129,44 +142,49 @@ export const ChatBotContextProvider = ({ children }) => {
   };
 
   const fetchChatSessions = async () => {
-    fetchHistory(true); // Loading state ko true set karen
+    fetchHistory(true);
     try {
       const q = query(
         collection(db, "Chats"),
         where("userId", "==", User.uid),
-        orderBy("timestamp", "desc") // Timestamp ko descending order me sort karna
+        orderBy("timestamp", "desc")
       );
       const querySnapshot = await getDocs(q);
+
       const sessions = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-      setHistory(sessions); // Sorted sessions ko set karein
+      setHistory(sessions);
     } catch (error) {
-      console.error("Error fetching chat sessions:", error); // Error handling
+      setError("Error fetching chat sessions");
     } finally {
-      fetchHistory(false); // Loading ko false set karein after fetching
+      fetchHistory(false);
     }
   };
 
   const fetchChatSession = async (sessionId) => {
-    const chatDocRef = doc(db, "Chats", sessionId);
-    const chatDoc = await getDoc(chatDocRef);
-    if (chatDoc.exists()) {
-      setChat(chatDoc.data().messages);
-      setCurrentChatId(chatDoc.id);
+    try {
+      const chatDocRef = doc(db, "Chats", sessionId);
+      const chatDoc = await getDoc(chatDocRef);
+      if (chatDoc.exists()) {
+        setChat(chatDoc.data().messages);
+        setCurrentChatId(chatDoc.id);
+      }
+    } catch (error) {
+      setError("Error Fetching History");
     }
   };
 
-  const typeResponse = (fullText) => {
+  const typeResponse = (
+    fullText = "No Response from Api please try later:"
+  ) => {
     let index = 0;
     const typingInterval = setInterval(() => {
-      // Check stopResponseRef.current inside the interval
       if (stopResponseRef.current) {
-        clearInterval(typingInterval); // If stopResponse is true, stop typing
+        clearInterval(typingInterval);
         return;
       }
-
       setChat((prevChat) => {
         const updatedChat = [...prevChat];
         const lastMessage = updatedChat[updatedChat.length - 1];
@@ -202,10 +220,10 @@ export const ChatBotContextProvider = ({ children }) => {
         Prompt: UserInput,
         Response: responseText,
       });
-      setFetchingData(false);
       typeResponse(responseText);
     } catch (error) {
-      console.log("Error while running the API or saving data:", error);
+      setError(`Error Api Call ${error.message}`);
+    } finally {
       setFetchingData(false);
     }
   };
@@ -213,6 +231,7 @@ export const ChatBotContextProvider = ({ children }) => {
   return (
     <ChatBotContext.Provider
       value={{
+        selectedResult,
         handleStop,
         history,
         handleInput,
@@ -232,6 +251,7 @@ export const ChatBotContextProvider = ({ children }) => {
         setIsChat,
         fetchedHistory,
         showPauseIcon,
+        setSelectedResult,
       }}
     >
       {children}

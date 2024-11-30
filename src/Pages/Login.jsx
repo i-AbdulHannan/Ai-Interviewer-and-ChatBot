@@ -1,26 +1,12 @@
-import { useEffect } from "react";
 import { useAuth } from "../Context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import GoogleBtn from "../Components/googleBtn";
 import Inputs from "../Components/Inputs";
 import AuthButton from "../Components/AuthButton";
 
 const Login = () => {
-  const {
-    error,
-    toastObj,
-    LoginEmailRef,
-    LoginPasswordRef,
-    handleLoginSubmit,
-  } = useAuth();
+  const { LoginEmailRef, LoginPasswordRef, handleLoginSubmit } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (error) {
-      toast.error(error, toastObj);
-    }
-  }, [error]);
 
   const loginFields = [
     {

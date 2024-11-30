@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "../Components/Button";
 import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -6,6 +6,15 @@ import { GeminiApiCall } from "../utilities/Gemini";
 import { toast } from "react-toastify";
 import { useAuth } from "../Context/AuthContext";
 import Result from "../Components/Result";
+import { useInterviewContext } from "../Context/InterviewContext";
+import { db } from "../utilities/firebase"; // Ensure Firebase setup is correct
+import {
+  addDoc,
+  collection,
+  doc,
+  serverTimestamp,
+  setDoc,
+} from "firebase/firestore";
 
 const InterviewQuestions = () => {
   const location = useLocation();
@@ -15,18 +24,42 @@ const InterviewQuestions = () => {
   const [response, setResponse] = useState(null);
   const [interviewComplete, setInterviewComplete] = useState(false);
   const [generateResult, setGenerateResult] = useState(false);
-  const { toastObj } = useAuth();
-  // const Questions = location.state;
-  const Questions = [
-    "Please rate the  following answers out of 5, calculate the percentage, and provide a short message like about result. The questions have been provided in the previous history; please check them. giv",
-  ];
+  const [questions, setQuestions] = useState(location.state.questions);
+  const [jobTitle, setJobTitle] = useState(location.state.jobTitle);
+  const { toastObj, User, setError } = useAuth();
 
   const handleChange = (e) => {
     setCurrentAnswer(e.target.value);
   };
 
+  useEffect(() => {
+    if (response) {
+      // After response is set, store it in Firestore
+      console.log("statrr");
+
+      addDoc(collection(db, "Interview"), {
+        Result: response,
+        timestamp: serverTimestamp(),
+        UserId: User.uid,
+        jobTitle,
+      })
+        .then(() => {
+          setJobTitle("");
+          setQuestions([]);
+          setInterviewComplete(true);
+          setGenerateResult(false); // Stop loading indicator
+          console.log("end");
+        })
+        .catch((error) => {
+          setError(error.message);
+          setGenerateResult(false);
+          console.log(error);
+        });
+    }
+  }, [response]); // Run after response is updated
+
   const handleNextQuestion = async () => {
-    if (index < Questions.length - 1) {
+    if (index < questions.length - 1) {
       if (currentAnswer.trim() === "") {
         toast.warning("Please write answer in text Area:", toastObj);
         return;
@@ -34,46 +67,56 @@ const InterviewQuestions = () => {
       setAnswers((prev) => [...prev, currentAnswer]);
       setIndex(index + 1);
       setCurrentAnswer("");
-    } else if (index === Questions.length - 1) {
+    } else if (index === questions.length - 1) {
       if (currentAnswer.trim() === "") {
         toast.warning("Please write answer in text Area:", toastObj);
         return;
       }
       setAnswers((prev) => [...prev, currentAnswer]);
-      const AllQuestions = Questions.map((item) => ({ text: item }));
+      setGenerateResult(true);
+      const AllQuestions = questions.map((item) => ({ text: item }));
       const allAnswers = [...Answers, currentAnswer];
       const AnswersStructure = allAnswers.map(
-        (item, index) => `${index + 1}:Answer ${item}`
+        (item, index) => `${index + 1}: Answer ${item}`
       );
 
-      const prompt = `Please rate the  following answers out of 5, calculate the percentage, and provide a short message like about result. The questions have been provided in the previous history; please check them. give me only percentage no extra text. ${AnswersStructure.join(
+      const prompt = `Please rate the following answers out of 5, calculate the percentage, and provide a short message about the result. The questions have been provided in the previous history; please check them. Give me only percentage no extra text. ${AnswersStructure.join(
         "\n"
       )}`;
-      setInterviewComplete(true);
-      setGenerateResult(true);
-      const response = await GeminiApiCall(prompt, [
-        {
-          role: "user",
-          parts: AllQuestions,
-        },
-      ]);
-      setResponse(response);
-      generateResult(false);
+      try {
+        const ApiResponse = await GeminiApiCall(prompt, [
+          {
+            role: "user",
+            parts: AllQuestions,
+          },
+        ]);
+        console.log(typeof ApiResponse);
+
+        if (ApiResponse.trim().endsWith("%")) {
+          setResponse(ApiResponse.slice(0, -2));
+        } else {
+          setResponse(ApiResponse);
+        }
+      } catch (error) {
+        setError(error.message);
+        setGenerateResult(false);
+        console.log(error);
+      }
     }
   };
 
   return (
-    <div className="min-h-[calc(100svh-80px)] py-6  w-full flex items-center justify-center">
+    <div className="min-h-[calc(100svh-80px)] py-6 w-full flex items-center justify-center">
       <div className="max-w-[1200px] lg:w-[80%] w-[97%] rounded-xl bg-[#040E1A] min-h-[80%] shadow-md shadow-blue-300 md:px-5 px-3 py-4">
-        {Array.isArray(Questions) && Questions.length > 0 ? (
+        {Array.isArray(questions) && questions.length > 0 && (
           <div className="w-full flex items-center flex-col gap-10">
             <div className="w-full flex flex-col md:flex-row md:gap-3 gap-1">
               <p className="text-xl font-medium">{`Q${index + 1}:`}</p>
               <p className="md:text-xl text-lg font-medium">
-                {Questions[index]}
+                {questions[index]}
               </p>
             </div>
-            <div className="w-full flex  flex-col md:gap-3 gap-1">
+            <div className="w-full flex flex-col md:gap-3 gap-1">
               <label
                 className="text-xl text-center md:text-left font-semibold"
                 htmlFor="answer"
@@ -93,17 +136,19 @@ const InterviewQuestions = () => {
               <Button
                 Click={handleNextQuestion}
                 text={
-                  Questions.length - 1 === index
+                  generateResult
+                    ? "Generating Result..."
+                    : questions.length - 1 === index
                     ? "Submit"
-                    : generateResult
-                    ? "Generate Result..."
                     : "Next Question"
                 }
               />
             </div>
           </div>
-        ) : (
-          <div className=" w-full h-full flex items-center justify-center lg:px-20 flex-col gap-7">
+        )}
+        {interviewComplete && <Result percentage={response} />}
+        {questions.length == 0 && !interviewComplete && (
+          <div className="w-full h-full flex items-center justify-center lg:px-20 flex-col gap-7">
             <p className="lg:text-3xl text-xl font-semibold text-center">
               Interview questions currently unavailable. Please fill the form to
               proceed with the interview.
@@ -113,7 +158,6 @@ const InterviewQuestions = () => {
             </Button>
           </div>
         )}
-        {interviewComplete && <Result result={response} />}
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   onAuthStateChanged,
+  signOut,
 } from "firebase/auth";
 import {
   collection,
@@ -16,16 +17,39 @@ import {
   doc,
 } from "firebase/firestore";
 import { auth, db } from "../utilities/firebase";
-import { Bounce } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { Bounce, toast } from "react-toastify";
 
-const AuthContext = createContext();
+const AuthContext = createContext({
+  signup: () => {},
+  loading: false,
+  error: null,
+  setError: () => {},
+  signInWithGoogle: () => {},
+  signIn: () => {},
+  User: null,
+  fetchedUser: true,
+  toastObj: {},
+  signupNameRef: null,
+  signupEmailRef: null,
+  signupPasswordRef: null,
+  handleSignupSubmit: () => {},
+  LoginEmailRef: null,
+  LoginPasswordRef: null,
+  handleLoginSubmit: () => {},
+  handleLogout: () => {},
+});
 
 export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [fetchedUser, FetchingUser] = useState(true);
-  const [User, setUser] = useState(false);
+  const [User, setUser] = useState(null);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error, toastObj);
+    }
+  }, [error]);
 
   const signupNameRef = useRef();
   const signupEmailRef = useRef();
@@ -79,7 +103,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const handleAuthError = (error) => {
-    switch (error) {
+    switch (error.message || error.code) {
       case "auth/email-already-in-use":
         setError("Email already registered. Please Login.");
         break;
@@ -122,7 +146,7 @@ export const AuthProvider = ({ children }) => {
       );
       navigate("/login");
     } catch (error) {
-      handleAuthError(error.code);
+      handleAuthError(error);
     } finally {
       setLoading(false);
     }
@@ -152,7 +176,7 @@ export const AuthProvider = ({ children }) => {
       }
       navigate("/interview-form");
     } catch (error) {
-      setError(error.message);
+      setError(error);
     } finally {
       setLoading(false);
     }
@@ -170,7 +194,7 @@ export const AuthProvider = ({ children }) => {
       await signInWithEmailAndPassword(auth, email, password);
       navigate("/interview-form");
     } catch (error) {
-      handleAuthError(error.code);
+      handleAuthError(error);
     } finally {
       setLoading(false);
     }
@@ -190,7 +214,7 @@ export const AuthProvider = ({ children }) => {
         signupNameRef.current.value = "";
       }
     } catch (error) {
-      setError(error.message);
+      setError(error);
     }
   };
 
@@ -206,13 +230,24 @@ export const AuthProvider = ({ children }) => {
         LoginPasswordRef.current.value = "";
       }
     } catch (error) {
-      setError(error.message);
+      setError(error);
     }
+  };
+
+  const handleLogout = () => {
+    signOut(auth)
+      .then(() => {
+        toast.success("Signout Succesfully", toastObj);
+      })
+      .catch((error) => {
+        setError(error);
+      });
   };
 
   return (
     <AuthContext.Provider
       value={{
+        handleLogout,
         signup,
         loading,
         error,

@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 const ProgressCircle = ({ percentage }) => {
   const progressColor = percentage >= 60 ? "#39FF14" : "#f87171";
+  console.log(percentage);
 
   return (
     <div className="flex flex-col items-center justify-center h-full py-2 gap-8">

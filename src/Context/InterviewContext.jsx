@@ -1,9 +1,20 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { GeminiApiCall } from "../utilities/Gemini";
 import { useNavigate } from "react-router-dom";
 
-const interviewContext = createContext();
+const interviewContext = createContext({
+  industriesAndJobs: [],
+  handleIndustryChange: () => {},
+  jobTitles: [],
+  onSubmit: () => {},
+  register: () => {},
+  handleSubmit: () => {},
+  GenerateQuestions: false,
+  userDetails: "",
+  setValue: [],
+  value: [],
+});
 
 const InterviewContextProvider = ({ children }) => {
   const navigate = useNavigate();
@@ -149,14 +160,18 @@ const InterviewContextProvider = ({ children }) => {
   const [jobTitles, setJobTitles] = useState([]);
   const [GenerateQuestions, setGenerateQuestions] = useState(false);
   const [userDetails, setUserDetaisl] = useState("");
+  const [value, setValue] = useState([]);
 
   const onSubmit = async (formData) => {
-    const { selectedIndustry, Description, Experience, JobTitle, Skills } =
-      formData;
-    const prompt = `Generate a JSON array of realistic, professional 3 interview questions based on the following job details. Focus on questions that assess the candidate’s skills, experience, and fit for the role in a real-world interview setting. Make questions natural and relevant. Job Details:Industry: ${selectedIndustry},  Job Title: ${JobTitle} , Job Description: ${Description} , Required Skills: ${Skills} , Experience Level: ${Experience} Output only the questions as a JSON array, with no additional text or symbols.`;
+    const { selectedIndustry, Description, Experience, JobTitle } = formData;
+    const prompt = `Generate a JSON array of realistic, professional 3 interview questions based on the following job details. Focus on questions that assess the candidate’s skills, experience, and fit for the role in a real-world interview setting. Make questions natural and relevant. Job Details:Industry: ${selectedIndustry},  Job Title: ${JobTitle} , Job Description: ${Description} , Required Skills: ${value.join(
+      " , "
+    )} , Experience Level: ${Experience} Output only the questions as a JSON array, with no additional text or symbols.`;
     setGenerateQuestions(true);
     setUserDetaisl(
-      `I am a ${JobTitle} , my sills is ${Skills} and my experience is  ${Experience} `
+      `I am a ${JobTitle} , my sills is ${value.join(
+        " , "
+      )} and my experience is  ${Experience} `
     );
     try {
       const result = await GeminiApiCall(prompt);
@@ -166,7 +181,9 @@ const InterviewContextProvider = ({ children }) => {
         .trim();
       const parse = JSON.parse(cleanResponse);
       setGenerateQuestions(false);
-      navigate("/interview", { state: parse });
+      navigate("/interview", {
+        state: { questions: parse, jobTitle: JobTitle },
+      });
     } catch (error) {
       console.error("Error while running the API or saving data:", error);
     }
@@ -192,9 +209,11 @@ const InterviewContextProvider = ({ children }) => {
         onSubmit,
         register,
         handleSubmit,
-        FormData,
+
         GenerateQuestions,
         userDetails,
+        setValue,
+        value,
       }}
     >
       {children}

@@ -2,9 +2,11 @@
 import { useChatBotContext } from "../Context/ChatBotContext";
 import ChatList from "../Components/ChatList";
 import ChatForm from "../Components/ChatForm";
+import Result from "../Components/Result";
 
 const ChatBot = () => {
-  const { isChat, userName, fetchUserName } = useChatBotContext();
+  const { isChat, userName, fetchUserName, selectedResult } =
+    useChatBotContext();
 
   return (
     <div className="h-[calc(100svh-80px)]  w-full flex items-center justify-center">
@@ -21,7 +23,11 @@ const ChatBot = () => {
               </h4>
             </div>
           )}
-          <ChatList userName={userName} />
+          {selectedResult ? (
+            <Result percentage={selectedResult} />
+          ) : (
+            <ChatList userName={userName} />
+          )}
         </div>
       </div>
     </div>

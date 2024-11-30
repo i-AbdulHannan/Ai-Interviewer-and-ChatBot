@@ -1,15 +1,11 @@
-import { useEffect } from "react";
 import { useAuth } from "../Context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import Inputs from "../Components/Inputs";
 import GoogleBtn from "../Components/googleBtn";
 import AuthButton from "../Components/AuthButton";
 
 const Signup = () => {
   const {
-    error,
-    toastObj,
     signupNameRef,
     signupEmailRef,
     signupPasswordRef,
@@ -43,12 +39,6 @@ const Signup = () => {
       autocomplete: "off",
     },
   ];
-
-  useEffect(() => {
-    if (error) {
-      toast.error(error, toastObj);
-    }
-  }, [error]);
 
   return (
     <div className="w-full min-h-[100svh] flex items-center justify-center">
