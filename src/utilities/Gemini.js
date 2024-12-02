@@ -18,7 +18,6 @@ const GeminiApiCall = async (prompt, history = []) => {
     history: history,
   });
 
-  console.log(history);
   const result = await chatSession.sendMessage(prompt);
   const responseText = result.response.text();
   return responseText;

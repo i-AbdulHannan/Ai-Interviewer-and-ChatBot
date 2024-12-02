@@ -11,7 +11,6 @@ import { ChatBotContextProvider } from "../Context/ChatBotContext";
 import ChatBot from "../Pages/ChatBot";
 import InterviewQuestions from "../Pages/InterviewQuestions";
 import NotFound from "../Components/NotFound";
-import TagInput from "../Components/TagInput";
 
 const router = createBrowserRouter([
   {
@@ -66,10 +65,6 @@ const router = createBrowserRouter([
   {
     path: "*",
     element: <NotFound />,
-  },
-  {
-    path: "q",
-    element: <TagInput />,
   },
 ]);
 

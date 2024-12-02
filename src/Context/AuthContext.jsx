@@ -45,9 +45,22 @@ export const AuthProvider = ({ children }) => {
   const [fetchedUser, FetchingUser] = useState(true);
   const [User, setUser] = useState(null);
 
+  const toastObj = {
+    position: "top-right",
+    autoClose: 3000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    theme: "dark",
+    transition: Bounce,
+  };
+
   useEffect(() => {
     if (error) {
       toast.error(error, toastObj);
+      setError(null);
     }
   }, [error]);
 
@@ -69,18 +82,6 @@ export const AuthProvider = ({ children }) => {
       }
     });
   }, []);
-
-  const toastObj = {
-    position: "top-right",
-    autoClose: 3000,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-    progress: undefined,
-    theme: "dark",
-    transition: Bounce,
-  };
 
   const formValidation = (email, password, name = null) => {
     if (name !== null && name.trim() === "") {
@@ -214,7 +215,7 @@ export const AuthProvider = ({ children }) => {
         signupNameRef.current.value = "";
       }
     } catch (error) {
-      setError(error);
+      setError("An error occured Please try again or later");
     }
   };
 
@@ -230,7 +231,7 @@ export const AuthProvider = ({ children }) => {
         LoginPasswordRef.current.value = "";
       }
     } catch (error) {
-      setError(error);
+      setError("An error occured Please try again or later");
     }
   };
 
@@ -239,8 +240,8 @@ export const AuthProvider = ({ children }) => {
       .then(() => {
         toast.success("Signout Succesfully", toastObj);
       })
-      .catch((error) => {
-        setError(error);
+      .catch(() => {
+        setError("Error Logout Please try again or later");
       });
   };
 

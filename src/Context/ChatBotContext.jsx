@@ -84,23 +84,35 @@ export const ChatBotContextProvider = ({ children }) => {
     setChat([]);
     setIsChat(false);
     setCurrentChatId(null);
+    setCurrentMsg("");
+    setFetchingData(false);
+    setShowPauseIcon(false);
+    setStopResponse(true);
+    if (selectedResult) {
+      setSelectedResult(null);
+    }
   };
 
   const handleSend = async (e) => {
-    e.preventDefault();
-    if (currentMsg.trim() !== "") {
-      setStopResponse(false);
-      setShowPauseIcon(true);
-      setCurrentMsg("");
-      setSendIcon(false);
-      setIsChat(true);
+    if (!showPauseIcon) {
+      if (selectedResult) {
+        setSelectedResult(null);
+      }
+      e.preventDefault();
+      if (currentMsg?.trim() !== "") {
+        setStopResponse(false);
+        setShowPauseIcon(true);
+        setCurrentMsg("");
+        setSendIcon(false);
+        setIsChat(true);
 
-      setChat((prevChat) => [
-        ...prevChat,
-        { Prompt: currentMsg, Response: "" },
-      ]);
+        setChat((prevChat) => [
+          ...prevChat,
+          { Prompt: currentMsg, Response: "" },
+        ]);
 
-      await run(currentMsg);
+        await run(currentMsg);
+      }
     }
   };
 
@@ -132,12 +144,16 @@ export const ChatBotContextProvider = ({ children }) => {
   };
 
   const getUserName = async () => {
-    const docRef = doc(db, "users", User.uid);
-    const docSnap = await getDoc(docRef);
+    try {
+      const docRef = doc(db, "users", User.uid);
+      const docSnap = await getDoc(docRef);
 
-    if (docSnap.exists()) {
-      fetchingUserName(false);
-      setUserName(docSnap.data().name);
+      if (docSnap.exists()) {
+        fetchingUserName(false);
+        setUserName(docSnap.data().name);
+      }
+    } catch (error) {
+      setError("Error Fetching Username");
     }
   };
 
@@ -164,6 +180,9 @@ export const ChatBotContextProvider = ({ children }) => {
   };
 
   const fetchChatSession = async (sessionId) => {
+    if (selectedResult) {
+      setSelectedResult(null);
+    }
     try {
       const chatDocRef = doc(db, "Chats", sessionId);
       const chatDoc = await getDoc(chatDocRef);
@@ -197,7 +216,7 @@ export const ChatBotContextProvider = ({ children }) => {
         }
         return updatedChat;
       });
-    }, 25);
+    }, 1500);
   };
 
   const findChats = () => {
@@ -222,7 +241,7 @@ export const ChatBotContextProvider = ({ children }) => {
       });
       typeResponse(responseText);
     } catch (error) {
-      setError(`Error Api Call ${error.message}`);
+      typeResponse("No response from API Please Try later");
     } finally {
       setFetchingData(false);
     }

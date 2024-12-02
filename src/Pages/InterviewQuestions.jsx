@@ -3,18 +3,10 @@ import Button from "../Components/Button";
 import { useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { GeminiApiCall } from "../utilities/Gemini";
-import { toast } from "react-toastify";
 import { useAuth } from "../Context/AuthContext";
 import Result from "../Components/Result";
-import { useInterviewContext } from "../Context/InterviewContext";
 import { db } from "../utilities/firebase"; // Ensure Firebase setup is correct
-import {
-  addDoc,
-  collection,
-  doc,
-  serverTimestamp,
-  setDoc,
-} from "firebase/firestore";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 
 const InterviewQuestions = () => {
   const location = useLocation();
@@ -24,9 +16,13 @@ const InterviewQuestions = () => {
   const [response, setResponse] = useState(null);
   const [interviewComplete, setInterviewComplete] = useState(false);
   const [generateResult, setGenerateResult] = useState(false);
-  const [questions, setQuestions] = useState(location.state.questions);
-  const [jobTitle, setJobTitle] = useState(location.state.jobTitle);
-  const { toastObj, User, setError } = useAuth();
+  const [questions, setQuestions] = useState(location?.state?.questions || []);
+  const [jobTitle, setJobTitle] = useState(location?.state?.jobTitle || null);
+  const [btnDisable, setBtnDisable] = useState(false);
+  const [userdetail, setUserDetail] = useState(
+    location?.state?.userDetails || null
+  );
+  const { User, setError } = useAuth();
 
   const handleChange = (e) => {
     setCurrentAnswer(e.target.value);
@@ -34,9 +30,6 @@ const InterviewQuestions = () => {
 
   useEffect(() => {
     if (response) {
-      // After response is set, store it in Firestore
-      console.log("statrr");
-
       addDoc(collection(db, "Interview"), {
         Result: response,
         timestamp: serverTimestamp(),
@@ -44,24 +37,28 @@ const InterviewQuestions = () => {
         jobTitle,
       })
         .then(() => {
-          setJobTitle("");
           setQuestions([]);
           setInterviewComplete(true);
-          setGenerateResult(false); // Stop loading indicator
-          console.log("end");
+          setGenerateResult(false);
+          setBtnDisable(false);
+          setJobTitle(null);
         })
         .catch((error) => {
-          setError(error.message);
+          setBtnDisable(false);
+          setError("Error save response");
           setGenerateResult(false);
-          console.log(error);
         });
     }
-  }, [response]); // Run after response is updated
+  }, [response]);
 
   const handleNextQuestion = async () => {
     if (index < questions.length - 1) {
       if (currentAnswer.trim() === "") {
-        toast.warning("Please write answer in text Area:", toastObj);
+        setError("Please write answer in text Area:");
+        return;
+      }
+      if (currentAnswer.trim().length > 600) {
+        setError("Your Answer exceeds 600 characters. Please shorten it");
         return;
       }
       setAnswers((prev) => [...prev, currentAnswer]);
@@ -69,10 +66,16 @@ const InterviewQuestions = () => {
       setCurrentAnswer("");
     } else if (index === questions.length - 1) {
       if (currentAnswer.trim() === "") {
-        toast.warning("Please write answer in text Area:", toastObj);
+        setError("Please write answer in text Area:");
+        return;
+      }
+      if (currentAnswer.trim().length > 600) {
+        setError("Your Answer exceeds 600 characters. Please shorten it");
+        console.log(currentAnswer.length);
         return;
       }
       setAnswers((prev) => [...prev, currentAnswer]);
+      setBtnDisable(true);
       setGenerateResult(true);
       const AllQuestions = questions.map((item) => ({ text: item }));
       const allAnswers = [...Answers, currentAnswer];
@@ -80,27 +83,30 @@ const InterviewQuestions = () => {
         (item, index) => `${index + 1}: Answer ${item}`
       );
 
-      const prompt = `Please rate the following answers out of 5, calculate the percentage, and provide a short message about the result. The questions have been provided in the previous history; please check them. Give me only percentage no extra text. ${AnswersStructure.join(
+      const prompt = `Please evaluate the following answers based on the questions provided in the previous history. Rate each answer out of 5, then calculate the total percentage. Ensure that the answers align with the context and are concise and clear. provide only the total percentage , without any extra text." ${AnswersStructure.join(
         "\n"
       )}`;
       try {
         const ApiResponse = await GeminiApiCall(prompt, [
           {
             role: "user",
-            parts: AllQuestions,
+            parts: [{ text: userdetail }, ...AllQuestions],
           },
         ]);
-        console.log(typeof ApiResponse);
-
         if (ApiResponse.trim().endsWith("%")) {
           setResponse(ApiResponse.slice(0, -2));
+        } else if (ApiResponse.trim().length > 4) {
+          setResponse(0);
         } else {
           setResponse(ApiResponse);
         }
+        setInterviewComplete(true);
+        setUserDetail(null);
+        setQuestions(null);
       } catch (error) {
-        setError(error.message);
+        setError("Error generating Result Please try again or later");
         setGenerateResult(false);
-        console.log(error);
+        setBtnDisable(false);
       }
     }
   };
@@ -126,15 +132,16 @@ const InterviewQuestions = () => {
               <textarea
                 value={currentAnswer}
                 onChange={handleChange}
-                id="answer"
+                id="answer "
                 rows="7"
                 placeholder="Write Answer..."
-                className="bg-[#CBD5E1] w-full outline-none md:text-xl text-lg font-semibold text-black px-3 py-1 rounded-lg placeholder-black"
+                className="bg-[#CBD5E1] w-full outline-none md:text-xl text-lg font-semibold text-black px-3 py-1 rounded-lg placeholder-black custom-sidebar"
               ></textarea>
             </div>
             <div className="w-full flex justify-end">
               <Button
                 Click={handleNextQuestion}
+                disabled={btnDisable}
                 text={
                   generateResult
                     ? "Generating Result..."
@@ -147,7 +154,7 @@ const InterviewQuestions = () => {
           </div>
         )}
         {interviewComplete && <Result percentage={response} />}
-        {questions.length == 0 && !interviewComplete && (
+        {!questions?.length && !interviewComplete && (
           <div className="w-full h-full flex items-center justify-center lg:px-20 flex-col gap-7">
             <p className="lg:text-3xl text-xl font-semibold text-center">
               Interview questions currently unavailable. Please fill the form to

@@ -27,7 +27,9 @@ const ChatForm = () => {
           <input
             value={currentMsg}
             type="text"
-            className="w-full rounded-3xl lg:text-lg lg:h-[54px] h-[48px] lg:font-semibold text-white placeholder-gray-200 outline-none px-5 bg-[#040E1A] shadow-md shadow-gray-600 border-[1px] border-gray-100"
+            className={`w-full rounded-3xl lg:text-lg lg:h-[54px] h-[48px] lg:font-semibold text-white placeholder-gray-200 outline-none px-5 bg-[#040E1A] shadow-md shadow-gray-600 border-[1px] border-gray-100  ${
+              showPauseIcon && "cursor-not-allowed"
+            }`}
             placeholder="Enter your Prompt here."
             onChange={handleInput}
           />
@@ -38,7 +40,7 @@ const ChatForm = () => {
                 fontSize: { xs: 30, lg: 40 },
                 cursor: "pointer",
                 transition: "transform 0.2s ease-in-out",
-                "&:hover": { transform: "scale(1.1)" },
+                "&:hover": { transform: "scale(1.09)" },
               }}
             />
           )}
@@ -49,18 +51,20 @@ const ChatForm = () => {
                 fontSize: { xs: 30, lg: 40 },
                 cursor: "pointer",
                 transition: "transform 0.2s ease-in-out",
-                "&:hover": { transform: "scale(1.1)" },
+                "&:hover": { transform: "scale(1.09)" },
               }}
             />
           )}
-          <button type="submit">
+          <button type="submit" disabled={showPauseIcon}>
             <SendRounded
+              disabled={showPauseIcon}
               sx={{
                 fontSize: { xs: 30, lg: 35 },
                 display: sendIcon ? "block" : "none",
-                cursor: "pointer",
+                cursor: showPauseIcon ? "not-allowed" : "pointer",
+                opacity: showPauseIcon ? 0.3 : 1,
                 transition: "transform 0.2s ease-in-out",
-                "&:hover": { transform: "scale(1.1)" },
+                "&:hover": { transform: "scale(1.09)" },
               }}
             ></SendRounded>
           </button>

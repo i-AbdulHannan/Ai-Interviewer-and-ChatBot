@@ -1,10 +1,12 @@
 import React from "react";
 import Button from "./Button";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { useChatBotContext } from "../Context/ChatBotContext";
 
-const ProgressCircle = ({ percentage }) => {
+const Result = ({ percentage }) => {
   const progressColor = percentage >= 60 ? "#39FF14" : "#f87171";
-  console.log(percentage);
+  const URL = useLocation();
+  const { startNewChat } = useChatBotContext();
 
   return (
     <div className="flex flex-col items-center justify-center h-full py-2 gap-8">
@@ -26,15 +28,20 @@ const ProgressCircle = ({ percentage }) => {
           : "Needs improvement! 🙁 Consider reviewing the topics and trying again."}
       </p>
       <div className="flex flex-col md:flex-row items-center justify-center md:gap-9 gap-6">
+        {URL.pathname === "/app" && (
+          <Button Click={startNewChat} text={"Start Chat"}></Button>
+        )}
+        {URL.pathname !== "/app" && (
+          <Button>
+            <Link to="/app">GoTo DashBoard</Link>
+          </Button>
+        )}
         <Button>
-          <Link to="/app">GoTo DashBoard</Link>
-        </Button>
-        <Button>
-          <Link to="/interview-form">Again Interview</Link>
+          <Link to="/interview-form">Restart Interview</Link>
         </Button>
       </div>
     </div>
   );
 };
 
-export default ProgressCircle;
+export default Result;

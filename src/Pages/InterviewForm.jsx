@@ -10,6 +10,7 @@ const InterviewForm = () => {
     onSubmit,
     register,
     GenerateQuestions,
+    btndisable,
   } = useInterviewContext();
 
   return (
@@ -89,7 +90,7 @@ const InterviewForm = () => {
                 id="description"
                 rows="4"
                 placeholder="Enter Job Description..."
-                className="placeholder-black outline-none bg-slate-300 rounded-lg px-3 py-1 text-base font-semibold"
+                className="placeholder-black outline-none bg-slate-300 rounded-lg px-3 py-1 text-base font-semibold custom-sidebar"
                 {...register("Description")}
               ></textarea>
             </div>
@@ -168,7 +169,7 @@ const InterviewForm = () => {
 
           <div className="mt-3 w-full lg:px-10 flex items-center justify-center px-3">
             <button
-              disabled={GenerateQuestions}
+              disabled={btndisable}
               onClick={handleSubmit(onSubmit)}
               type="submit"
               className="bg-cyan-600 text-xl w-full font-bold lg:px-6 rounded-xl py-2  text-black hover:bg-cyan-700 hover:text-white transition-all"

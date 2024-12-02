@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { GeminiApiCall } from "../utilities/Gemini";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "./AuthContext";
 
 const interviewContext = createContext({
   industriesAndJobs: [],
@@ -11,9 +12,9 @@ const interviewContext = createContext({
   register: () => {},
   handleSubmit: () => {},
   GenerateQuestions: false,
-  userDetails: "",
   setValue: [],
   value: [],
+  btndisable: false,
 });
 
 const InterviewContextProvider = ({ children }) => {
@@ -159,20 +160,40 @@ const InterviewContextProvider = ({ children }) => {
   const { register, handleSubmit } = useForm();
   const [jobTitles, setJobTitles] = useState([]);
   const [GenerateQuestions, setGenerateQuestions] = useState(false);
-  const [userDetails, setUserDetaisl] = useState("");
   const [value, setValue] = useState([]);
+  const [btndisable, setBtnDisable] = useState(false);
+  const { setError } = useAuth();
 
   const onSubmit = async (formData) => {
-    const { selectedIndustry, Description, Experience, JobTitle } = formData;
-    const prompt = `Generate a JSON array of realistic, professional 3 interview questions based on the following job details. Focus on questions that assess the candidate’s skills, experience, and fit for the role in a real-world interview setting. Make questions natural and relevant. Job Details:Industry: ${selectedIndustry},  Job Title: ${JobTitle} , Job Description: ${Description} , Required Skills: ${value.join(
+    const { selectedIndustry, Description, Experience, JobTitle, Type } =
+      formData;
+    if (
+      selectedIndustry === "" ||
+      Description === "" ||
+      Experience === "" ||
+      JobTitle === "" ||
+      Type === "" ||
+      value.length <= 0
+    ) {
+      setError("Please Fill all Fields");
+      return;
+    }
+    if (Description.length > 300) {
+      console.log(Description.length);
+
+      setError("Your Description exceeds 300 characters. Please shorten it");
+      return;
+    }
+
+    setBtnDisable(true);
+    const prompt = `Generate a JSON array of realistic, professional interview questions based on the following job details. Focus on questions that assess the candidate’s skills, experience, and fit for the role in a real-world interview setting. Make questions natural and relevant. Job Details:Industry: ${selectedIndustry},  Job Title: ${JobTitle} , Job Description: ${Description} , Required Skills: ${value.join(
       " , "
     )} , Experience Level: ${Experience} Output only the questions as a JSON array, with no additional text or symbols.`;
     setGenerateQuestions(true);
-    setUserDetaisl(
-      `I am a ${JobTitle} , my sills is ${value.join(
-        " , "
-      )} and my experience is  ${Experience} `
-    );
+    const userDetails = `I am a ${JobTitle} , my sills is ${value.join(
+      " , "
+    )} and my experience is  ${Experience} `;
+
     try {
       const result = await GeminiApiCall(prompt);
       const cleanResponse = result
@@ -181,11 +202,18 @@ const InterviewContextProvider = ({ children }) => {
         .trim();
       const parse = JSON.parse(cleanResponse);
       setGenerateQuestions(false);
+      setBtnDisable(false);
       navigate("/interview", {
-        state: { questions: parse, jobTitle: JobTitle },
+        state: {
+          questions: parse,
+          jobTitle: JobTitle,
+          userDetails: userDetails,
+        },
       });
     } catch (error) {
-      console.error("Error while running the API or saving data:", error);
+      setError("Error while running the API or saving data:");
+      setBtnDisable(false);
+      setGenerateQuestions(false);
     }
   };
   const handleIndustryChange = (e) => {
@@ -209,9 +237,8 @@ const InterviewContextProvider = ({ children }) => {
         onSubmit,
         register,
         handleSubmit,
-
+        btndisable,
         GenerateQuestions,
-        userDetails,
         setValue,
         value,
       }}
