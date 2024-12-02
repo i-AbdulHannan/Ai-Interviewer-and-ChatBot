@@ -216,7 +216,7 @@ export const ChatBotContextProvider = ({ children }) => {
         }
         return updatedChat;
       });
-    }, 1500);
+    }, 25);
   };
 
   const findChats = () => {

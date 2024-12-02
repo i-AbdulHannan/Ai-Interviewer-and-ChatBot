@@ -17,7 +17,7 @@ const App = () => {
         theme="dark"
         transition:Bounce
       />
-      <Routes />;
+      <Routes />
     </>
   );
 };
