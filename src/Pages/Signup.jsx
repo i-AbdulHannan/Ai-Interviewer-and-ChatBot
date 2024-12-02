@@ -1,7 +1,7 @@
 import { useAuth } from "../Context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import Inputs from "../Components/Inputs";
-import GoogleBtn from "../Components/googleBtn";
+import GoogleBtn from "../Components/GoogleBtn";
 import AuthButton from "../Components/AuthButton";
 
 const Signup = () => {

@@ -1,6 +1,6 @@
 import { useAuth } from "../Context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import GoogleBtn from "../Components/googleBtn";
+import GoogleBtn from "../Components/GoogleBtn";
 import Inputs from "../Components/Inputs";
 import AuthButton from "../Components/AuthButton";
 
