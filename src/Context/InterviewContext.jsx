@@ -1,8 +1,10 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { GeminiApiCall } from "../utilities/Gemini";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "../utilities/firebase";
 
 const interviewContext = createContext({
   industriesAndJobs: [],
@@ -14,7 +16,15 @@ const interviewContext = createContext({
   GenerateQuestions: false,
   setValue: [],
   value: [],
+  questions: [],
+  handleNextQuestion: () => {},
   btndisable: false,
+  interviewComplete: false,
+  response: null,
+  generateResult: false,
+  index: 0,
+  setCurrentAnswer: "",
+  currentAnswer: "",
 });
 
 const InterviewContextProvider = ({ children }) => {
@@ -156,13 +166,48 @@ const InterviewContextProvider = ({ children }) => {
       ],
     },
   ];
-
+  const location = useLocation();
+  const [Answers, setAnswers] = useState([]);
+  const [index, setIndex] = useState(0);
+  const [response, setResponse] = useState(null);
+  const [interviewComplete, setInterviewComplete] = useState(false);
+  const [generateResult, setGenerateResult] = useState(false);
   const { register, handleSubmit } = useForm();
   const [jobTitles, setJobTitles] = useState([]);
   const [GenerateQuestions, setGenerateQuestions] = useState(false);
   const [value, setValue] = useState([]);
+  const [currentAnswer, setCurrentAnswer] = useState("");
   const [btndisable, setBtnDisable] = useState(false);
-  const { setError } = useAuth();
+  const [questions, setQuestions] = useState(location?.state?.questions || []);
+  const [jobTitle, setJobTitle] = useState(location?.state?.jobTitle || null);
+  const [userdetail, setUserDetail] = useState(
+    location?.state?.userDetails || null
+  );
+  const { setError, User } = useAuth();
+
+  useEffect(() => {
+    if (response) {
+      addDoc(collection(db, "Interview"), {
+        Result: response,
+        timestamp: serverTimestamp(),
+        UserId: User.uid,
+        jobTitle,
+      })
+        .then(() => {
+          setQuestions([]);
+          setGenerateResult(false);
+          setBtnDisable(false);
+          setJobTitle(null);
+          setInterviewComplete(true);
+          setUserDetail(null);
+        })
+        .catch((error) => {
+          setBtnDisable(false);
+          setError("Error save response");
+          setGenerateResult(false);
+        });
+    }
+  }, [response]);
 
   const onSubmit = async (formData) => {
     const { selectedIndustry, Description, Experience, JobTitle, Type } =
@@ -179,14 +224,12 @@ const InterviewContextProvider = ({ children }) => {
       return;
     }
     if (Description.length > 300) {
-      console.log(Description.length);
-
       setError("Your Description exceeds 300 characters. Please shorten it");
       return;
     }
 
     setBtnDisable(true);
-    const prompt = `Generate a JSON array of realistic, professional interview questions based on the following job details. Focus on questions that assess the candidate’s skills, experience, and fit for the role in a real-world interview setting. Make questions natural and relevant. Job Details:Industry: ${selectedIndustry},  Job Title: ${JobTitle} , Job Description: ${Description} , Required Skills: ${value.join(
+    const prompt = `Generate a JSON array of realistic, professional 3 interview questions based on the following job details. Focus on questions that assess the candidate’s skills, experience, and fit for the role in a real-world interview setting. Make questions natural and relevant. Job Details:Industry: ${selectedIndustry},  Job Title: ${JobTitle} , Job Description: ${Description} , Required Skills: ${value.join(
       " , "
     )} , Experience Level: ${Experience} Output only the questions as a JSON array, with no additional text or symbols.`;
     setGenerateQuestions(true);
@@ -203,19 +246,24 @@ const InterviewContextProvider = ({ children }) => {
       const parse = JSON.parse(cleanResponse);
       setGenerateQuestions(false);
       setBtnDisable(false);
-      navigate("/interview", {
-        state: {
-          questions: parse,
-          jobTitle: JobTitle,
-          userDetails: userDetails,
-        },
-      });
+      navigate(
+        "/interview",
+        { replace: true },
+        {
+          state: {
+            questions: parse,
+            jobTitle: JobTitle,
+            userDetails: userDetails,
+          },
+        }
+      );
     } catch (error) {
       setError("Error while running the API or saving data:");
       setBtnDisable(false);
       setGenerateQuestions(false);
     }
   };
+
   const handleIndustryChange = (e) => {
     const selectedIndustry = e.target.value;
     const findJobs = industriesAndJobs.find(
@@ -225,6 +273,63 @@ const InterviewContextProvider = ({ children }) => {
       setJobTitles(findJobs.jobs);
     } else {
       setJobTitles([]);
+    }
+  };
+
+  const handleNextQuestion = async () => {
+    if (index < questions.length - 1) {
+      if (currentAnswer.trim() === "") {
+        setError("Please write answer in text Area:");
+        return;
+      }
+      if (currentAnswer.trim().length > 600) {
+        setError("Your Answer exceeds 600 characters. Please shorten it");
+        return;
+      }
+      setAnswers((prev) => [...prev, currentAnswer]);
+      setIndex(index + 1);
+      setCurrentAnswer("");
+    } else if (index === questions.length - 1) {
+      if (currentAnswer.trim() === "") {
+        setError("Please write answer in text Area:");
+        return;
+      }
+      if (currentAnswer.trim().length > 600) {
+        setError("Your Answer exceeds 600 characters. Please shorten it");
+        console.log(currentAnswer.length);
+        return;
+      }
+      setAnswers((prev) => [...prev, currentAnswer]);
+      setBtnDisable(true);
+      setGenerateResult(true);
+      const AllQuestions = questions.map((item) => ({ text: item }));
+      const allAnswers = [...Answers, currentAnswer];
+      const AnswersStructure = allAnswers.map(
+        (item, index) => `${index + 1}: Answer ${item}`
+      );
+
+      const prompt = `Please evaluate the following answers based on the questions provided in the previous history. Rate each answer out of 5, then calculate the total percentage. Ensure that the answers align with the context and are concise and clear. provide only the total percentage , without any extra text." ${AnswersStructure.join(
+        "\n"
+      )}`;
+      try {
+        const ApiResponse = await GeminiApiCall(prompt, [
+          {
+            role: "user",
+            parts: [{ text: userdetail }, ...AllQuestions],
+          },
+        ]);
+        if (ApiResponse.trim().endsWith("%")) {
+          setResponse(ApiResponse.slice(0, -2));
+        } else if (ApiResponse.trim().length > 4) {
+          setResponse(0);
+        } else {
+          setResponse(ApiResponse);
+        }
+      } catch (error) {
+        setError("Error generating Result Please try again or later");
+        setGenerateResult(false);
+        setBtnDisable(false);
+      }
     }
   };
 
@@ -241,6 +346,14 @@ const InterviewContextProvider = ({ children }) => {
         GenerateQuestions,
         setValue,
         value,
+        questions,
+        handleNextQuestion,
+        interviewComplete,
+        response,
+        generateResult,
+        index,
+        setCurrentAnswer,
+        currentAnswer,
       }}
     >
       {children}

@@ -54,13 +54,13 @@ const InterviewForm = () => {
 
             <div className="flex flex-col gap-1 text-black">
               <label
-                htmlFor="Job Title"
+                htmlFor="Job-Title"
                 className="text-lg font-semibold text-gray-100"
               >
                 Job Title:
               </label>
               <select
-                id="Job Title"
+                id="Job-Title"
                 className="bg-slate-300 outline-none text-base font-semibold py-3 rounded-lg px-3"
                 {...register("JobTitle")}
               >

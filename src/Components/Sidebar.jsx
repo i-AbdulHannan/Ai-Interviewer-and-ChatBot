@@ -69,7 +69,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, handleSidebarToggle }) => {
         onClick={handleSidebarToggle}
       />
       <div
-        className={`h-screen w-full shadow-2xl shadow-black lg:w-[300px] bg-[#081229]  rounded-lg absolute z-[1061] py-3 transition-all duration-300 ease-in-out top-0 ${
+        className={`h-screen w-full shadow-2xl shadow-black lg:w-[400px] bg-[#081229]  rounded-lg absolute z-[1061] py-3 transition-all duration-300 ease-in-out top-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -128,7 +128,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, handleSidebarToggle }) => {
                   className="w-full hover:cursor-pointer hover:bg-[#18274a] mb-3 rounded-lg py-1 px-2 flex items-center justify-between"
                   onClick={() => handleInterviewHistory(doc.id, doc.Result)}
                 >
-                  <p className="lg:text-xl font-medium">
+                  <p className=" md:text-lg  xl:text-xl font-medium">
                     {doc.jobTitle || "No JobTitle available"}
                   </p>
                   <p>
