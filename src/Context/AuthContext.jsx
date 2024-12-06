@@ -176,7 +176,7 @@ export const AuthProvider = ({ children }) => {
           UserId: user.uid,
         });
       }
-      navigate("/interview-form");
+      navigate("/app");
     } catch (error) {
       setError(error.code);
     } finally {
@@ -194,7 +194,7 @@ export const AuthProvider = ({ children }) => {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/interview-form");
+      navigate("/app");
     } catch (error) {
       handleAuthError(error.code);
     } finally {

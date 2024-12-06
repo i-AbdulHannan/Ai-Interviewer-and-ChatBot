@@ -67,7 +67,7 @@ export default function TagInput() {
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
         className="placeholder-black outline-none bg-slate-300 rounded-lg px-3 py-3 text-base font-semibold"
-        placeholder="Type and press Enter or Space to add tags lg:"
+        placeholder="Type and press Enter or Space to add tags"
       />
     </>
   );
