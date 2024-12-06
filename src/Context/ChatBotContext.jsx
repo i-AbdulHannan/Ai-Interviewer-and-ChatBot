@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { useAuth } from "./AuthContext";
 import { GeminiApiCall } from "../utilities/Gemini";
+import { VoiceChat } from "@mui/icons-material";
 
 const ChatBotContext = createContext({
   handleInput: () => {},
@@ -39,6 +40,13 @@ const ChatBotContext = createContext({
   showPauseIcon: false,
   setSelectedResult: () => {},
   selectedResult: null,
+  handleVoiceChat: () => {},
+  isConversation: false,
+  handleCancel: () => {},
+  AskQuestion: false,
+  disable: false,
+  voiceChat: false,
+  setVoiceChat: () => {},
 });
 
 export const ChatBotContextProvider = ({ children }) => {
@@ -55,6 +63,10 @@ export const ChatBotContextProvider = ({ children }) => {
   const [showPauseIcon, setShowPauseIcon] = useState(false);
   const [stopResponse, setStopResponse] = useState(false);
   const [selectedResult, setSelectedResult] = useState(null);
+  const [voiceChat, setVoiceChat] = useState(false);
+  const [isConversation, setIsConversation] = useState(false);
+  const [AskQuestion, setAskQuestion] = useState(false);
+  const [disable, setDisable] = useState(false);
   const { User, setError } = useAuth();
 
   const stopResponseRef = useRef(stopResponse);
@@ -139,7 +151,7 @@ export const ChatBotContextProvider = ({ children }) => {
         });
       }
     } catch (error) {
-      setError("Error save Document");
+      setError(error.code || error.message);
     }
   };
 
@@ -153,7 +165,7 @@ export const ChatBotContextProvider = ({ children }) => {
         setUserName(docSnap.data().name);
       }
     } catch (error) {
-      setError("Error Fetching Username");
+      setError(error.code || error.message);
     }
   };
 
@@ -173,7 +185,7 @@ export const ChatBotContextProvider = ({ children }) => {
       }));
       setHistory(sessions);
     } catch (error) {
-      setError("Error fetching chat sessions");
+      setError(error.code || error.message);
     } finally {
       fetchHistory(false);
     }
@@ -191,7 +203,7 @@ export const ChatBotContextProvider = ({ children }) => {
         setCurrentChatId(chatDoc.id);
       }
     } catch (error) {
-      setError("Error Fetching History");
+      setError(error.code || error.message);
     }
   };
 
@@ -241,15 +253,90 @@ export const ChatBotContextProvider = ({ children }) => {
       });
       typeResponse(responseText);
     } catch (error) {
+      setError(error.code || error.message);
       typeResponse("No response from API Please Try later");
     } finally {
       setFetchingData(false);
     }
   };
+  const speakText = (text) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "hi-GB";
+    utterance.pitch = 1;
+    utterance.rate = 1;
+    utterance.volume = 1;
+    window.speechSynthesis.speak(utterance);
+    utterance.onend = () => {
+      setIsConversation(false);
+    };
+  };
+
+  const startSpeechRecognition = () => {
+    const recognition = new (window.SpeechRecognition ||
+      window.webkitSpeechRecognition)();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.start();
+    let spokenText = "";
+    recognition.onresult = async (event) => {
+      spokenText = event.results[0][0].transcript;
+      if (spokenText.trim() === "") {
+        setIsConversation(false);
+        setDisable(false);
+        return;
+      }
+      try {
+        const result = await GeminiApiCall(spokenText);
+        let customResult =
+          result.split("**").length > 1
+            ? result.split("**")
+            : result.split("*");
+        speakText(customResult.join(""));
+        setDisable(false);
+      } catch (error) {
+        setError(error.code || error.message);
+        speakText(
+          "An error Occured Please Try Later" + error.code || error.message
+        );
+      }
+    };
+
+    recognition.onerror = (event) => {
+      setError(event.error);
+      if (event.error === "no-speech") {
+        setError("User didn't speak anything.");
+      }
+    };
+
+    recognition.onend = () => {
+      if (spokenText.trim() === "") {
+        setIsConversation(false);
+        setDisable(false);
+        setAskQuestion(false);
+      } else {
+        setIsConversation(true);
+        setAskQuestion(false);
+      }
+    };
+  };
+
+  const handleVoiceChat = () => {
+    setAskQuestion(true);
+    startSpeechRecognition();
+    setDisable(true);
+  };
+
+  const handleCancel = () => {
+    window.speechSynthesis.cancel();
+    setIsConversation(false);
+  };
 
   return (
     <ChatBotContext.Provider
       value={{
+        disable,
+        AskQuestion,
         selectedResult,
         handleStop,
         history,
@@ -271,6 +358,11 @@ export const ChatBotContextProvider = ({ children }) => {
         fetchedHistory,
         showPauseIcon,
         setSelectedResult,
+        handleVoiceChat,
+        isConversation,
+        handleCancel,
+        setVoiceChat,
+        voiceChat,
       }}
     >
       {children}

@@ -59,7 +59,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (error) {
-      toast.error(error, toastObj);
+      let errorSlice = error.slice(0, 50);
+      toast.error(errorSlice, toastObj);
       setError(null);
     }
   }, [error]);
@@ -104,7 +105,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const handleAuthError = (error) => {
-    switch (error.message || error.code) {
+    switch (error) {
       case "auth/email-already-in-use":
         setError("Email already registered. Please Login.");
         break;
@@ -147,7 +148,7 @@ export const AuthProvider = ({ children }) => {
       );
       navigate("/login");
     } catch (error) {
-      handleAuthError(error);
+      handleAuthError(error.code);
     } finally {
       setLoading(false);
     }
@@ -177,7 +178,7 @@ export const AuthProvider = ({ children }) => {
       }
       navigate("/interview-form");
     } catch (error) {
-      setError(error);
+      setError(error.code);
     } finally {
       setLoading(false);
     }
@@ -195,43 +196,35 @@ export const AuthProvider = ({ children }) => {
       await signInWithEmailAndPassword(auth, email, password);
       navigate("/interview-form");
     } catch (error) {
-      handleAuthError(error);
+      handleAuthError(error.code);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSignupSubmit = async (navigate) => {
-    try {
-      const success = await signup(
-        signupEmailRef.current.value,
-        signupPasswordRef.current.value,
-        signupNameRef.current.value,
-        navigate
-      );
-      if (success) {
-        signupEmailRef.current.value = "";
-        signupPasswordRef.current.value = "";
-        signupNameRef.current.value = "";
-      }
-    } catch (error) {
-      setError("An error occured Please try again or later");
+    const success = await signup(
+      signupEmailRef.current.value,
+      signupPasswordRef.current.value,
+      signupNameRef.current.value,
+      navigate
+    );
+    if (success) {
+      signupEmailRef.current.value = "";
+      signupPasswordRef.current.value = "";
+      signupNameRef.current.value = "";
     }
   };
 
   const handleLoginSubmit = async (navigate) => {
-    try {
-      const success = await signIn(
-        LoginEmailRef.current.value,
-        LoginPasswordRef.current.value,
-        navigate
-      );
-      if (success) {
-        LoginEmailRef.current.value = "";
-        LoginPasswordRef.current.value = "";
-      }
-    } catch (error) {
-      setError("An error occured Please try again or later");
+    const success = await signIn(
+      LoginEmailRef.current.value,
+      LoginPasswordRef.current.value,
+      navigate
+    );
+    if (success) {
+      LoginEmailRef.current.value = "";
+      LoginPasswordRef.current.value = "";
     }
   };
 
@@ -240,8 +233,8 @@ export const AuthProvider = ({ children }) => {
       .then(() => {
         toast.success("Signout Succesfully", toastObj);
       })
-      .catch(() => {
-        setError("Error Logout Please try again or later");
+      .catch((error) => {
+        setError(error.code);
       });
   };
 

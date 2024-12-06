@@ -203,21 +203,19 @@ const InterviewContextProvider = ({ children }) => {
         })
         .catch((error) => {
           setBtnDisable(false);
-          setError("Error save response");
           setGenerateResult(false);
+          setError(error.code || error.message);
         });
     }
   }, [response]);
 
   const onSubmit = async (formData) => {
-    const { selectedIndustry, Description, Experience, JobTitle, Type } =
-      formData;
+    const { selectedIndustry, Description, Experience, JobTitle } = formData;
     if (
       selectedIndustry === "" ||
       Description === "" ||
       Experience === "" ||
       JobTitle === "" ||
-      Type === "" ||
       value.length <= 0
     ) {
       setError("Please Fill all Fields");
@@ -233,9 +231,9 @@ const InterviewContextProvider = ({ children }) => {
       " , "
     )} , Experience Level: ${Experience} Output only the questions as a JSON array, with no additional text or symbols.`;
     setGenerateQuestions(true);
-    const userDetails = `I am a ${JobTitle} , my sills is ${value.join(
-      " , "
-    )} and my experience is  ${Experience} `;
+    const userDetails = `I am a ${JobTitle} my sills is ${value.join(
+      ","
+    )} and my experience is ${Experience}.`;
 
     try {
       const result = await GeminiApiCall(prompt);
@@ -246,19 +244,16 @@ const InterviewContextProvider = ({ children }) => {
       const parse = JSON.parse(cleanResponse);
       setGenerateQuestions(false);
       setBtnDisable(false);
-      navigate(
-        "/interview",
-        { replace: true },
-        {
-          state: {
-            questions: parse,
-            jobTitle: JobTitle,
-            userDetails: userDetails,
-          },
-        }
-      );
+      navigate("/interview", {
+        replace: true,
+        state: {
+          questions: parse,
+          jobTitle: JobTitle,
+          userDetails: userDetails,
+        },
+      });
     } catch (error) {
-      setError("Error while running the API or saving data:");
+      setError(error.code || error.message);
       setBtnDisable(false);
       setGenerateQuestions(false);
     }
@@ -296,16 +291,18 @@ const InterviewContextProvider = ({ children }) => {
       }
       if (currentAnswer.trim().length > 600) {
         setError("Your Answer exceeds 600 characters. Please shorten it");
-        console.log(currentAnswer.length);
         return;
       }
       setAnswers((prev) => [...prev, currentAnswer]);
       setBtnDisable(true);
       setGenerateResult(true);
-      const AllQuestions = questions.map((item) => ({ text: item }));
+      const AllQuestions = questions.map((item) => ({
+        text: item.question || item,
+      }));
+
       const allAnswers = [...Answers, currentAnswer];
       const AnswersStructure = allAnswers.map(
-        (item, index) => `${index + 1}: Answer ${item}`
+        (item, index) => `AnsNo:${index + 1}: ${item}`
       );
 
       const prompt = `Please evaluate the following answers based on the questions provided in the previous history. Rate each answer out of 5, then calculate the total percentage. Ensure that the answers align with the context and are concise and clear. provide only the total percentage , without any extra text." ${AnswersStructure.join(
@@ -326,7 +323,7 @@ const InterviewContextProvider = ({ children }) => {
           setResponse(ApiResponse);
         }
       } catch (error) {
-        setError("Error generating Result Please try again or later");
+        setError(error.code || error.message);
         setGenerateResult(false);
         setBtnDisable(false);
       }

@@ -2,6 +2,7 @@ import {
   SendRounded,
   BorderColorOutlined,
   StopCircleRounded,
+  KeyboardVoiceRounded,
 } from "@mui/icons-material";
 import { useChatBotContext } from "../Context/ChatBotContext";
 
@@ -15,6 +16,7 @@ const ChatForm = () => {
     isChat,
     handleStop,
     showPauseIcon,
+    setVoiceChat,
   } = useChatBotContext();
 
   return (
@@ -24,6 +26,15 @@ const ChatForm = () => {
         className="w-full h-full flex items-center justify-center"
       >
         <div className="flex items-center justify-center lg:w-[80%] w-full gap-2 lg:gap-1">
+          <KeyboardVoiceRounded
+            onClick={() => setVoiceChat(true)}
+            sx={{
+              fontSize: { xs: 30, lg: 40 },
+              cursor: "pointer",
+              transition: "transform 0.2s ease-in-out",
+              "&:hover": { transform: "scale(1.09)" },
+            }}
+          />
           <input
             value={currentMsg}
             type="text"

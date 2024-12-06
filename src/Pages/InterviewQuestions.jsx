@@ -1,6 +1,7 @@
 import Button from "../Components/Button";
 import { Link } from "react-router-dom";
 import Result from "../Components/Result";
+import ProgressBar from "../Components/ProgressBar";
 import { useInterviewContext } from "../Context/InterviewContext";
 
 const InterviewQuestions = () => {
@@ -21,27 +22,33 @@ const InterviewQuestions = () => {
   } = useInterviewContext();
 
   return (
-    <div className="min-h-[calc(100svh-80px)] py-6 w-full flex items-center justify-center">
+    <div className="min-h-[calc(100dvh-80px)] py-6 w-full flex items-center justify-center">
       <div className="max-w-[1200px] lg:w-[80%] w-[97%] rounded-xl bg-[#040E1A] min-h-[80%] shadow-md shadow-blue-300 md:px-5 px-3 py-4">
         {Array.isArray(questions) && questions?.length > 0 && (
+          <ProgressBar
+            currentIndex={index}
+            totalQuestions={questions.length}
+          ></ProgressBar>
+        )}
+        {Array.isArray(questions) && questions?.length > 0 && (
           <div className="w-full flex items-center flex-col gap-10">
-            <div className="w-full flex flex-col md:flex-row md:gap-3 gap-1">
+            <div className="w-full flex md:flex-row md:gap-3 gap-1">
               <p className="text-xl font-medium">{`Q${index + 1}:`}</p>
               <p className="md:text-xl text-lg font-medium">
-                {questions[index]}
+                {questions[index].question || questions[index]}
               </p>
             </div>
             <div className="w-full flex flex-col md:gap-3 gap-1">
               <label
-                className="text-xl text-center md:text-left font-semibold"
                 htmlFor="answer"
+                className="text-xl text-center md:text-left font-semibold"
               >
                 Enter Your Answer:
               </label>
               <textarea
                 value={currentAnswer}
                 onChange={handleChange}
-                id="answer "
+                id="answer"
                 rows="7"
                 placeholder="Write Answer..."
                 className="bg-[#CBD5E1] w-full outline-none md:text-xl text-lg font-semibold text-black px-3 py-1 rounded-lg placeholder-black custom-sidebar"

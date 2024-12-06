@@ -14,7 +14,7 @@ const InterviewForm = () => {
   } = useInterviewContext();
 
   return (
-    <div className="min-h-[100svh] w-full flex items-center justify-center px-2">
+    <div className="min-h-[100dvh] w-full flex items-center justify-center px-2">
       <div className="w-full max-w-[900px] lg:w-[50%]  my-7 bg-[#040E1A] rounded-xl shadow-lg shadow-blue-300 flex items-center py-6">
         <div className="flex flex-col h-full w-full gap-7 px-1">
           <h1 className="text-center text-3xl font-bold">
@@ -94,9 +94,7 @@ const InterviewForm = () => {
                 {...register("Description")}
               ></textarea>
             </div>
-          </div>
 
-          <div className="w-full grid lg:grid-cols-2 gap-6 lg:px-10 px-3">
             <div className="flex flex-col gap-1 text-black">
               <label
                 htmlFor="Experience"
@@ -129,31 +127,6 @@ const InterviewForm = () => {
                 </option>
               </select>
             </div>
-            <div className="flex flex-col gap-1 text-black">
-              <label
-                htmlFor="type"
-                className="text-lg font-semibold text-gray-100"
-              >
-                Select Interview Type:
-              </label>
-              <select
-                id="type"
-                className="bg-slate-300 outline-none text-base font-semibold py-3 rounded-lg px-3"
-                {...register("Type")}
-              >
-                <option className="text-base font-semibold " value="">
-                  Choose Interview Type...
-                </option>
-                <option className="text-base font-semibold " value={"Chat"}>
-                  Chat
-                </option>
-                <option className="text-base font-semibold " value={"Voice"}>
-                  Voice
-                </option>
-              </select>
-            </div>
-          </div>
-          <div className="w-full grid grid-cols-1 gap-6 lg:px-10 px-3">
             <div className="flex  w-full flex-col gap-1 text-black">
               <TagInput></TagInput>
             </div>

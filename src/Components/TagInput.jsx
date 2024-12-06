@@ -8,7 +8,13 @@ export default function TagInput() {
   const handleKeyDown = (event) => {
     const trimmedValue = inputValue.trim();
 
-    if ((event.key === "Enter" || event.key === " ") && trimmedValue !== "") {
+    if (
+      (event.key === "Enter" ||
+        event.key === " " ||
+        event.code === "Enter" ||
+        event.code === "Space") &&
+      trimmedValue !== ""
+    ) {
       event.preventDefault();
       if (!value.includes(trimmedValue)) {
         setValue((prevValue) => [...prevValue, trimmedValue]);
@@ -61,7 +67,7 @@ export default function TagInput() {
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
         className="placeholder-black outline-none bg-slate-300 rounded-lg px-3 py-3 text-base font-semibold"
-        placeholder="Type and press Enter or Space to add tags"
+        placeholder="Type and press Enter or Space to add tags lg:"
       />
     </>
   );
