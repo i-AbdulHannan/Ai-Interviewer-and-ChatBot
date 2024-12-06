@@ -28,7 +28,7 @@ const VoiceChat = () => {
           <img
             src="/assets/Voice1.webp"
             alt="voice"
-            className="size-60 object-contain  xl:size-80"
+            className="size-60 object-contain xl:size-80"
           />
           <div className="flex items-center justify-center">
             <Button
