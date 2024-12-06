@@ -34,9 +34,7 @@
 ---
 
 🎥 Demo
-<p align="center">
   <a href="https://furqan-ai-interviewer-chatbot.netlify.app/">Visit AI Interviewer Chatbot</a>
-</p>
 
 
 
