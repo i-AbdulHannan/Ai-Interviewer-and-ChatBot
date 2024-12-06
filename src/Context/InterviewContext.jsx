@@ -227,7 +227,7 @@ const InterviewContextProvider = ({ children }) => {
     }
 
     setBtnDisable(true);
-    const prompt = `Generate a JSON array of realistic, professional 3 interview questions based on the following job details. Focus on questions that assess the candidate’s skills, experience, and fit for the role in a real-world interview setting. Make questions natural and relevant. Job Details:Industry: ${selectedIndustry},  Job Title: ${JobTitle} , Job Description: ${Description} , Required Skills: ${value.join(
+    const prompt = `Generate a JSON array of realistic, professional interview questions based on the following job details. Focus on questions that assess the candidate’s skills, experience, and fit for the role in a real-world interview setting. Make questions natural and relevant. Job Details:Industry: ${selectedIndustry},  Job Title: ${JobTitle} , Job Description: ${Description} , Required Skills: ${value.join(
       " , "
     )} , Experience Level: ${Experience} Output only the questions as a JSON array, with no additional text or symbols.`;
     setGenerateQuestions(true);
